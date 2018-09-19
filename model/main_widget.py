@@ -148,7 +148,7 @@ class MainWidget(QMainWindow):
 
         # 上下分割
         self.textOut = QTextBrowser()
-        self.makeRightContent()     
+        self.makeRightContent()
         self.setCentralWidget(self.center_widget)
 
     # 右侧内容设置

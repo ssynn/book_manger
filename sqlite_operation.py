@@ -19,7 +19,6 @@ cursor = conn.cursor()
 #                 unread int,
 #                 original_name text,
 #                 new_name text,
-#                 author text
 #                 )''')
 
 # cursor.execute('select * from user')  # 查找
@@ -33,7 +32,7 @@ cursor = conn.cursor()
 
 # cursor.execute("delete from books") # 删除记录, 如果没有就返回空列表
 # cursor.execute("update books set classify='纯爱 NTR' where address=?", [add+'0'])
-book_list = cursor.execute("select * from books ").fetchall()  # 查找所有字段
+# book_list = cursor.execute("select * from books ").fetchall()  # 查找所有字段
 # book_list = cursor.execute("select * from books where classify glob ? ", ['*'+'纯爱'+'*']).fetchall()
 # 分类
 # cursor.execute('''create table classify(
@@ -42,11 +41,11 @@ book_list = cursor.execute("select * from books ").fetchall()  # 查找所有字
 # )''')
 # cursor.execute("insert into classify values (?,?)", ["unclassified", ""])  # 插入分类
 # data = json.dumps([add+'3', add+'0', add+'1'])
-# cursor.execute("update classify set book_list=?", [data])
+cursor.execute("update classify set name='NTR' where name='ntr' ")
 # cursor.execute("select book_list from classify where name='NTR'")
 # cursor.execute("delete from classify", [])
-# cursor.execute("select * from classify")
-# book_list = cursor.fetchall()
+cursor.execute("select * from classify")
+book_list = cursor.fetchall()
 # book_list = json.loads(book_list)
 # print(book_list)
 # print(cursor.fetchall())
@@ -55,8 +54,8 @@ book_list = cursor.execute("select * from books ").fetchall()  # 查找所有字
 #     book_list[i] = book_list[i][0]
     # print(i[0])
 print(book_list)
-for i in public_function.toDictList(book_list):
-    print(i)
+# for i in public_function.toDictList(book_list):
+#     print(i)
 
 cursor.close()
 conn.commit()

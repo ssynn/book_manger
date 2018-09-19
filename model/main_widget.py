@@ -7,7 +7,7 @@ from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import Qt
 from model import public_function as pf
 from model import flowlayout as fl
-from model import add_book_dialog as ad
+from model import set_book_dialog as st
 from model import book_model as bm
 from model import tree_view as tv
 
@@ -96,7 +96,7 @@ class MainWidget(QMainWindow):
         dirName = QFileDialog.getExistingDirectory(self, '选择文件夹', './')
         if dirName:
             # print(dirName)
-            self.addWindow = ad.AddNewBookDialog(dirName)
+            self.addWindow = st.SetBookMessage(dirName)
             self.addWindow.before_close_signal.connect(
                 self.addOneNewBookFunction)
             self.addWindow.show()
@@ -115,7 +115,7 @@ class MainWidget(QMainWindow):
 
     # 数据处理函数
     def addOneNewBookFunction(self, value):
-        print(value)
+        # print(value)
         pf.addNewBook(value, self.textOut)
 
     # 删除分类方法
@@ -135,6 +135,9 @@ class MainWidget(QMainWindow):
         self.setWindowTitle('Manger')
         self.setWindowIcon(QIcon('tx.jpg'))
         self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + "页面加载完成!")
+        self.textOut.append('''
+            <input>sad</input>
+        ''')
         self.show()
 
     # 设置主页面内容

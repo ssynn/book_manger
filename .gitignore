@@ -1,3 +1,5 @@
-!/books/
+/books
+!/books/readme.txt
+sqlite_operation.py
 /useless
 test.py

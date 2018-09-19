@@ -1,6 +1,7 @@
 import os
 import time
 from model import public_function as pf
+from model import set_book_dialog as st
 from PyQt5.QtWidgets import (QAbstractItemView, QAction, QMessageBox, QMenu,
                              QApplication, QTreeView, QInputDialog)
 from PyQt5.QtGui import QStandardItemModel, QPixmap
@@ -54,6 +55,7 @@ class BookModel(QTreeView):
     # 修改选中书本的内容
     def modifyItem(self):
         modify = QAction("&修改", self)
+        modify.triggered.connect(self.modifyFunction)
         return modify
 
     # 彻底删除当前书本
@@ -149,6 +151,18 @@ class BookModel(QTreeView):
             pf.addBookClassify(self.selectedIndexes()[4].data(), self.master.textOut, text)
             print('添加成功！')
             self.master.refresh()
+
+    # 修改书本信息
+    def modifyFunction(self):
+        for i in self.book_:
+            if i['address'] == self.selectedIndexes()[4].data():
+                self.addWindow = st.SetBookMessage(i)
+                self.addWindow.before_close_signal.connect(self.modifyFunctionBase)
+                self.addWindow.show()
+
+    def modifyFunctionBase(self, value):
+        print(value)
+        pf.modifyBookInfo(value, self.master.textOut)
 
     # list转str
     def listToStr(self, classify_names: list):

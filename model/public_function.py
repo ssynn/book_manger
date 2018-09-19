@@ -20,6 +20,7 @@ DICTHEAD = ["address",
             "author"]
 
 
+# 只是提出参考
 def book_name_cut(name: str):
     newBook = {
         "face": None,
@@ -70,21 +71,20 @@ def book_name_cut(name: str):
     if book_name:
         newBook['author'] = book_name[0][1:-1]
     newBook['book_name'] = name.replace(' ', '')
-    newBook['new_name'] = '[' + newBook['author'] + ']' + newBook['book_name']
-    if newBook['Cxx'] != 'C00':
-        newBook['new_name'] += ('(' + newBook['Cxx'] + ')')
     return newBook
 
 
 def addNewBook(book_: dict, out_box):
+    # print(book_['original_path'], book_['address'])
     try:
+        res = True
         conn = sqlite3.connect('./data/data.db')
         cursor = conn.cursor()
         # 把书收入库
         author_all = os.listdir('./books')
         if author_all.count(book_['author']) == 0:
             os.makedirs('./books/'+book_['author'])
-        os.renames(book_['original_name'], book_['address'])
+        os.renames(book_['original_path'], book_['address'])
         book_info = []
         # 把值单独作为数组
         for i in DICTHEAD:
@@ -92,12 +92,44 @@ def addNewBook(book_: dict, out_box):
         cursor.execute('''insert into books values (?,?,?,?,?,?,?,?,?,?,?,?)''', book_info)
     except Exception:
         print('insertError!')
+        res = False
         out_box.append(time.strftime("%Y-%m-%d %H:%M") + '插入失败！')
     finally:
         cursor.close()
-        conn.commit()
+        if res:
+            conn.commit()
         conn.close()
         out_box.append(time.strftime("%Y-%m-%d %H:%M") + '插入成功。')
+
+
+# 修改书本信息, 此操作会删除原书然后插入修改后的书
+def modifyBookInfo(book_: dict, out_box):
+    try:
+        res = True
+        conn = sqlite3.connect('./data/data.db')
+        cursor = conn.cursor()
+        # 把书收入库
+        author_all = os.listdir('./books')
+        if author_all.count(book_['author']) == 0:
+            os.makedirs('./books/'+book_['author'])
+        if book_['original_path'] != book_['address']:
+            os.renames(book_['original_path'], book_['address'])
+        book_info = []
+        # 把值单独作为数组
+        for i in DICTHEAD:
+            book_info.append(book_[i])
+        cursor.execute('''delete from books where address=?''', [book_['original_path']])
+        cursor.execute('''insert into books values (?,?,?,?,?,?,?,?,?,?,?,?)''', book_info)
+    except Exception:
+        print('modifyError!')
+        res = False
+        out_box.append(time.strftime("%Y-%m-%d %H:%M") + '修改失败！')
+    finally:
+        cursor.close()
+        if res:
+            conn.commit()
+        conn.close()
+        out_box.append(time.strftime("%Y-%m-%d %H:%M") + '修改成功。')
 
 
 # 传入要插入的分类名, 返回插入状态 bool
@@ -113,7 +145,8 @@ def addNewClassify(classify_name: list):
         res = False
     finally:
         cursor.close()
-        conn.commit()
+        if res:
+            conn.commit()
         conn.close()
         return res
 
@@ -130,7 +163,8 @@ def deleteClassify(classify_name: str):
         res = False
     finally:
         cursor.close()
-        conn.commit()
+        if res:
+            conn.commit()
         conn.close()
         return res
 
@@ -157,12 +191,12 @@ def getBookList(classify_name: str, out_box=None):
             out_box.append(time.strftime("%Y-%m-%d %H:%M") + '获取目录失败！')
     finally:
         cursor.close()
-        conn.commit()
         conn.close()
         # if out_box:
         #     out_box.append(time.strftime("%Y-%m-%d %H:%M") + '获取列表完毕。')
 
 
+# 书名切割
 def bookNameCut(book_name: str):
     return book_name_cut(book_name)
 
@@ -195,13 +229,16 @@ def deleteBookClassify(book_address: str, out_box, classify_name=None):
             classify_list = str(classify_list)
             classify_list = classify_list[1: -1].replace('\'', '')
             cursor.execute("update books set classify=? where address=?", [classify_list.replace(',', ''), book_address])
+        res = True
     except Exception as e:
+        res = False
         out_box.append(time.strftime("%Y-%m-%d %H:%M") + '移除失败。')
         print('删除时出现错误!')
         print(e)
     finally:
         cursor.close()
-        conn.commit()
+        if res:
+            conn.commit()
         conn.close()
         out_box.append(time.strftime("%Y-%m-%d %H:%M") + '移除完毕。')
 
@@ -230,13 +267,16 @@ def addBookClassify(book_address: str, out_box, classify_name=None):
             classify_list = str(classify_list)
             classify_list = classify_list[1: -1].replace('\'', '')
             cursor.execute("update books set classify=? where address=?", [classify_list.replace(',', ''), book_address])
+        res = True
     except Exception as e:
+        res = False
         out_box.append(time.strftime("%Y-%m-%d %H:%M") + '添加失败。')
         print('删除时出现错误!')
         print(e)
     finally:
         cursor.close()
-        conn.commit()
+        if res:
+            conn.commit()
         conn.close()
 
 
@@ -261,12 +301,15 @@ def deleteBook(book_address: str, out_box):
         #     book_list = json.loads(book_list)
         #     book_list.remove(i)
         #     cursor.execute("update classify set book_list=? where name=?", [json.dumps(book_list), i])
+        res = True
     except Exception as e:
+        res = False
         out_box.append(time.strftime("%Y-%m-%d %H:%M") + '移除失败。')
         print('删除时出现错误!')
     finally:
         cursor.close()
-        conn.commit()
+        if res:
+            conn.commit()
         conn.close()
 
 
@@ -308,6 +351,5 @@ def getAllClassifyName():
         print('查找失败')
     finally:
         cursor.close()
-        conn.commit()
         conn.close()
         return classify_list

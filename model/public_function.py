@@ -23,18 +23,18 @@ DICTHEAD = ["address",
 # 只是提出参考
 def book_name_cut(name: str):
     newBook = {
-        "face": None,
-        "classify": [],
-        "book_name": None,
-        "Cxx": "C00",
-        "chinesization": "未知",
-        "author": "未知",
-        "favourite": False,
-        "date": time.strftime("%Y-%m-%d"),
-        "address": None,
-        "unread": 0,
-        "original_name": name,
-        "new_name": ""
+        "face": "",                             # 不预设
+        "classify": "",                         # 不预设
+        "book_name": "",                        # 预设
+        "Cxx": "C00",                           # 预设
+        "chinesization": "未知",                # 预设
+        "author": "未知",                       # 预设
+        "favourite": 0,                         # 不预设
+        "date": time.strftime("%Y-%m-%d"),      # 预设
+        "address": "",                          # 不预设
+        "unread": 0,                            # 不预设
+        "original_name": name,                  # 预设
+        "new_name": ""                          # 不预设
     }
     comic_market = re.search(r"C\d{2,3}", name, re.I)
     name = re.sub(r"\(C\d{2,3}\)", '', name)
@@ -93,13 +93,14 @@ def addNewBook(book_: dict, out_box):
     except Exception:
         print('insertError!')
         res = False
-        out_box.append(time.strftime("%Y-%m-%d %H:%M") + '插入失败！')
+        out_box.append(time.strftime("%Y-%m-%d %H:%M") + '插入失败！' + book_['new_name'])
     finally:
         cursor.close()
         if res:
             conn.commit()
         conn.close()
-        out_box.append(time.strftime("%Y-%m-%d %H:%M") + '插入成功。')
+        out_box.append(time.strftime("%Y-%m-%d %H:%M") + '已插入:' + book_['new_name'] + "。")
+        return res
 
 
 # 修改书本信息, 此操作会删除原书然后插入修改后的书

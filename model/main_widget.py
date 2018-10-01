@@ -10,7 +10,7 @@ from model import flowlayout as fl
 from model import set_book_dialog as st
 from model import book_model as bm
 from model import tree_view as tv
-
+from model import set_books_dialog as sts
 
 class MainWidget(QMainWindow):
     def __init__(self):
@@ -66,6 +66,11 @@ class MainWidget(QMainWindow):
         addBookItem.triggered.connect(self.addOneNewBookDialog)
         return addBookItem
 
+    def addNewBooks(self):
+        item = QAction("批量添加", self)
+        item.triggered.connect(self.addNewBooksDialog)
+        return item
+
     # 添加分类菜单项
     def addClassify(self):
         addClassifyItem = QAction('添加分类', self)
@@ -84,10 +89,11 @@ class MainWidget(QMainWindow):
     def setMenu(self):
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&文件')
+        fileMenu.addAction(self.exitFunction())
         fileMenu.addAction(self.addOneNewBook())
+        fileMenu.addAction(self.addNewBooks())
         editMenu = menubar.addMenu('&编辑')
-        editMenu.addAction(self.exitFunction())
-        editMenu.addAction(self.swiftItemView())
+        # editMenu.addAction(self.swiftItemView())
         editMenu.addAction(self.addClassify())
         editMenu.addAction(self.deleteClassify())
 
@@ -103,6 +109,16 @@ class MainWidget(QMainWindow):
         else:
             print('error!')
 
+    # 批量添加窗口
+    def addNewBooksDialog(self):
+        dirName = QFileDialog.getExistingDirectory(self, '选择文件夹', './')
+        filelist = os.listdir(dirName)
+        filelist = list(filter(isDir, filelist))
+        print(dirName, filelist)
+        self.addBooksWindow = sts.SetMultiMessage(filelist, dirName)
+        self.addBooksWindow.before_close_signal.connect(self.addNewBooksFunction)
+        self.addBooksWindow.show()
+
     # 插入新分类方法
     def addNewClassifyFunction(self):
         text, ok = QInputDialog.getText(self, '新的分类:', '可输入多个分类(空格间隔)')
@@ -115,8 +131,14 @@ class MainWidget(QMainWindow):
 
     # 数据处理函数
     def addOneNewBookFunction(self, value):
-        # print(value)
         pf.addNewBook(value, self.textOut)
+
+    # 批量添加
+    def addNewBooksFunction(self, bookList: list):
+        cnt = 0
+        for i in bookList:
+            cnt += int(pf.addNewBook(i, self.textOut))
+        self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + "成功插入:" + str(cnt) + "个，失败:" + str(len(bookList)-cnt) + "个。")
 
     # 删除分类方法
     def deleteClassifyFunction(self):
@@ -130,10 +152,10 @@ class MainWidget(QMainWindow):
     def setMainWindow(self):
         # 设置位置和大小
         # self.setGeometry(300, 600, 300, 300)
+        self.setWindowIcon(QIcon('pic/tx.jpg'))
         self.resize(1280, 720)
         self.center()
         self.setWindowTitle('Manger')
-        self.setWindowIcon(QIcon('tx.jpg'))
         self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + "页面加载完成!")
         self.textOut.append('''
             <input>sad</input>
@@ -242,3 +264,8 @@ def makeBookView(book: dict):
     view.setLayout(vLayout)
     view.resize(150, 150)
     return view
+
+
+def isDir(name: str):
+    ext = os.path.splitext(name)[1]
+    return ext == ''

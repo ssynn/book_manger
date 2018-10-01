@@ -1,8 +1,8 @@
 import os
 import time
-from PyQt5.QtWidgets import (QWidget, QDesktopWidget, QMainWindow, QAction,
-                             qApp, QInputDialog, QFileDialog, QSplitter,
-                             QTextBrowser, QLabel, QVBoxLayout)
+from PyQt5.QtWidgets import (QWidget, QDesktopWidget, QMainWindow, QAction, QGridLayout,
+                             qApp, QInputDialog, QFileDialog, QSplitter, QLineEdit,
+                             QTextBrowser, QLabel, QVBoxLayout, QToolButton)
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import Qt
 from model import public_function as pf
@@ -11,6 +11,7 @@ from model import set_book_dialog as st
 from model import book_model as bm
 from model import tree_view as tv
 from model import set_books_dialog as sts
+
 
 class MainWidget(QMainWindow):
     def __init__(self):
@@ -68,6 +69,7 @@ class MainWidget(QMainWindow):
 
     def addNewBooks(self):
         item = QAction("批量添加", self)
+        item.setShortcut('Ctrl+M')
         item.triggered.connect(self.addNewBooksDialog)
         return item
 
@@ -89,9 +91,9 @@ class MainWidget(QMainWindow):
     def setMenu(self):
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&文件')
-        fileMenu.addAction(self.exitFunction())
         fileMenu.addAction(self.addOneNewBook())
         fileMenu.addAction(self.addNewBooks())
+        fileMenu.addAction(self.exitFunction())
         editMenu = menubar.addMenu('&编辑')
         # editMenu.addAction(self.swiftItemView())
         editMenu.addAction(self.addClassify())
@@ -114,7 +116,7 @@ class MainWidget(QMainWindow):
         dirName = QFileDialog.getExistingDirectory(self, '选择文件夹', './')
         filelist = os.listdir(dirName)
         filelist = list(filter(isDir, filelist))
-        print(dirName, filelist)
+        # print(dirName, filelist)
         self.addBooksWindow = sts.SetMultiMessage(filelist, dirName)
         self.addBooksWindow.before_close_signal.connect(self.addNewBooksFunction)
         self.addBooksWindow.show()
@@ -132,6 +134,7 @@ class MainWidget(QMainWindow):
     # 数据处理函数
     def addOneNewBookFunction(self, value):
         pf.addNewBook(value, self.textOut)
+        self.refresh()
 
     # 批量添加
     def addNewBooksFunction(self, bookList: list):
@@ -139,6 +142,7 @@ class MainWidget(QMainWindow):
         for i in bookList:
             cnt += int(pf.addNewBook(i, self.textOut))
         self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + "成功插入:" + str(cnt) + "个，失败:" + str(len(bookList)-cnt) + "个。")
+        self.refresh()
 
     # 删除分类方法
     def deleteClassifyFunction(self):
@@ -148,18 +152,22 @@ class MainWidget(QMainWindow):
         else:
             self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + "删除失败!")
 
+    # 搜索方法
+    def searchFunction(self):
+        self.books = pf.search(self.searchInput.text())
+        self.rightContent.deleteLater()
+        self.makeRightContent()
+        self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + "找到" + str(len(self.books)) + "条结果。")
+
     # 主页面初始化
     def setMainWindow(self):
         # 设置位置和大小
         # self.setGeometry(300, 600, 300, 300)
         self.setWindowIcon(QIcon('pic/tx.jpg'))
-        self.resize(1280, 720)
+        self.resize(1280, 800)
         self.center()
         self.setWindowTitle('Manger')
         self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + "页面加载完成!")
-        self.textOut.append('''
-            <input>sad</input>
-        ''')
         self.show()
 
     # 设置主页面内容
@@ -181,7 +189,8 @@ class MainWidget(QMainWindow):
         # 上下分割
         self.rightContent = QSplitter()
 
-        # 设置为图片浏览
+        # 上方组件
+        # 设置为图片浏览, 不知道什么时候会做这个功能
         if self.list_view:
             flowLayout = fl.FlowLayout()
             for i in self.books:
@@ -198,10 +207,9 @@ class MainWidget(QMainWindow):
                 }
             ''')
             booksView.addWidget(book_model)
-            self.picLayout = QLabel()
-            pic = QPixmap('./pic/face.jpg')
 
-            self.picLayout.setPixmap(pic.scaled(400, 800, aspectRatioMode=Qt.KeepAspectRatio))
+            self.picLayout = QLabel()
+            self.picLayout.setPixmap(QPixmap('./pic/face.jpg').scaled(400, 800, aspectRatioMode=Qt.KeepAspectRatio))
             self.picLayout.setMaximumWidth(400)
             self.picLayout.setMinimumWidth(400)
             self.picLayout.setStyleSheet('''
@@ -211,11 +219,58 @@ class MainWidget(QMainWindow):
             ''')
             booksView.addWidget(self.picLayout)
 
+        # 下方组建, 一个搜索条一个输出信息框
+        textView = QSplitter()
+        self.searchButton = QToolButton()
+        self.searchButton.setIcon(QIcon('icon/search.png'))
+        self.searchButton.clicked.connect(self.searchFunction)
+        self.searchButton.setStyleSheet('''
+            QToolButton{
+                border: 0px;
+            }
+        ''')
+        self.searchInput = QLineEdit()
+        self.searchInput.setMaximumWidth(200)
+        self.searchInput.setMinimumHeight(30)
+        self.searchInput.editingFinished.connect(self.searchFunction)
+        self.searchInput.setStyleSheet('''
+            *{
+                border: 1px solid #c3c3c3;
+                border-radius: 8px;
+                color: #aaaaaa;
+                margin: 0px
+            }
+        ''')
+        space = QLabel()
+        self.searchLayout = QGridLayout()
+        self.searchLayout.addWidget(space, 0, 0, 1, 5)
+        self.searchLayout.addWidget(self.searchInput, 0, 6)
+        self.searchLayout.addWidget(self.searchButton, 0, 7, 1, 1)
+        self.searchBar = QWidget()
+        self.searchBar.setLayout(self.searchLayout)
+        self.searchBar.setStyleSheet('''
+            *{
+                background-color: white;
+            }
+        ''')
+        textView.addWidget(self.searchBar)
+        textView.addWidget(self.textOut)
+        textView.setOrientation(Qt.Vertical)
+        textView.setStretchFactor(0, 2)
+        textView.setStretchFactor(1, 5)
+        textView.setStyleSheet('''
+            QSplitter{
+                background-color = white;
+                border: 0px;
+                border-top: 1px solid #c3c3c3;
+            }
+        ''')
+
         self.rightContent.addWidget(booksView)
-        self.rightContent.addWidget(self.textOut)
+        self.rightContent.addWidget(textView)
         self.rightContent.setOrientation(Qt.Vertical)
-        self.rightContent.setStretchFactor(0, 7)
-        self.rightContent.setStretchFactor(1, 3)
+        self.rightContent.setStretchFactor(0, 6)
+        self.rightContent.setStretchFactor(1, 4)
         self.center_widget.addWidget(self.rightContent)
 
     # 切换视图 暂时放弃
@@ -239,10 +294,8 @@ class MainWidget(QMainWindow):
                 border: 0px solid gray;
             }
         ''')
-        self.textOut.setStyleSheet(''' 
-            QTextBrowser{
-                border-top: 1px solid #f7f7f7;
-            }
+        self.textOut.setStyleSheet('''
+            border: 0px;
         ''')
 
 

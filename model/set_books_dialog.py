@@ -1,18 +1,10 @@
-import sys
 import os
-from PyQt5.QtWidgets import (QApplication, QWidget, QGridLayout, QTreeView,
+from PyQt5.QtWidgets import (QWidget, QGridLayout, QTreeView,
                              QLabel, QLineEdit, QTextEdit, QPushButton,
                              QCheckBox, QHBoxLayout, QGroupBox, QToolButton)
 from PyQt5.QtGui import QStandardItemModel, QIcon
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from model import public_function as pf
-address = 'E:/7-7'
-filelist = [
-    '[ぷぅのぷぅぷぅぷぅ] 深夜の迷いギャル [中国翻訳]',
-    '[エクセシオ] 自己中な巨乳姉と貧乳妹をまとめて催眠にかけて玩具にして、イチャイチャしながら3P生本番！ [鬼畜王汉化组]',
-    '[多門結之] 絶対きみとセックスするから。[4K[S版]掃圖組]', '[尼尔个人汉化][valssu (茶琉)]  水島さんは露出症02',
-    '[月之废墟汉化][オザケン] 君はその瞳で嘘をつく 全2話'
-]
 
 
 # self.newBook为当前显示的书本
@@ -29,6 +21,7 @@ class SetMultiMessage(QWidget):
             temp['face_list'] = os.listdir(os.path.join(address, i))
             temp['face_list'] = list(filter(isPic, temp['face_list']))[:3]
             temp['face'] = temp['face_list'][0]
+            temp['original_path'] = os.path.join(self.path, temp['original_name'])
             self.faceSelected = temp['face']
             self.bookList.append(temp)
         self.newBook = self.bookList[0]
@@ -157,7 +150,6 @@ class SetMultiMessage(QWidget):
 
     # 把右侧更改后的信息保存到newBook
     def confirm(self):
-        self.newBook['original_path'] = self.path
         # 以下参数允许手动修改
         self.newBook['author'] = self.authorInput.text()
         self.newBook['book_name'] = self.bookNameInput.text()
@@ -256,9 +248,3 @@ class SetMultiMessage(QWidget):
 def isPic(name: str):
     ext = os.path.splitext(name)[1]
     return ext == '.jpg' or ext == '.png'
-
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    ex = SetMultiMessage(filelist, address)
-    sys.exit(app.exec_())

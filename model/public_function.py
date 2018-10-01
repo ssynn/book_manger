@@ -170,7 +170,7 @@ def deleteClassify(classify_name: str):
         return res
 
 
-# 返回包含完整书本信息的dict列表，使用glob查找
+# 通过查找分类返回包含完整书本信息的dict列表，使用glob查找
 def getBookList(classify_name: str, out_box=None):
     try:
         conn = sqlite3.connect('./data/data.db')
@@ -185,7 +185,6 @@ def getBookList(classify_name: str, out_box=None):
             data = cursor.execute("select * from books where classify='' ").fetchall()
         else:
             data = cursor.execute("select * from books where classify glob ? ", ['*'+classify_name+'*']).fetchall()
-        return toDictList(data)
     except Exception:
         print('获取目录失败！')
         if out_box:
@@ -193,6 +192,7 @@ def getBookList(classify_name: str, out_box=None):
     finally:
         cursor.close()
         conn.close()
+        return toDictList(data)
         # if out_box:
         #     out_box.append(time.strftime("%Y-%m-%d %H:%M") + '获取列表完毕。')
 
@@ -257,9 +257,9 @@ def addBookClassify(book_address: str, out_box, classify_name=None):
             cursor.execute('update books set favourite=1 where address=?', [book_address])
         # 添加到特定分类中
         else:
-            # 在书的分类列表中移除分类
+            # 在书的分类列表中添加分类
             classify_list = cursor.execute("select classify from books where address=?", [book_address]).fetchall()[0][0]
-            print(classify_list)
+            # print(classify_list)
             classify_list = classify_list.split()
             classify_name = classify_name.split()
             for i in classify_name:
@@ -272,12 +272,12 @@ def addBookClassify(book_address: str, out_box, classify_name=None):
     except Exception as e:
         res = False
         out_box.append(time.strftime("%Y-%m-%d %H:%M") + '添加失败。')
-        print('删除时出现错误!')
-        print(e)
+        print('添加时出现错误!')
     finally:
         cursor.close()
         if res:
             conn.commit()
+            out_box.append(time.strftime("%Y-%m-%d %H:%M") + '添加成功。')
         conn.close()
 
 
@@ -354,3 +354,25 @@ def getAllClassifyName():
         cursor.close()
         conn.close()
         return classify_list
+
+
+# 通过查找书名和分类并返回包含完整书本信息的dict列表，使用glob查找
+def search(val: str):
+    val = val.split()
+    data = []
+    # print(val)
+    try:
+        conn = sqlite3.connect('./data/data.db')
+        cursor = conn.cursor()
+        for i in val:
+            temp = cursor.execute("select * from books where original_name glob ?", ['*' + i + '*']).fetchall()
+            data += temp
+            temp = cursor.execute("select * from books where classify glob ?", ['*' + i + '*']).fetchall()
+            data += temp
+        data = list(set(data))
+    except Exception:
+        print('Error!')
+    finally:
+        cursor.close()
+        conn.close()
+        return toDictList(data)

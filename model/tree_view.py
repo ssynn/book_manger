@@ -19,7 +19,6 @@ class MyTreeView(QTreeWidget):
         self.setStyleSheet('''
             QTreeWidget{
                 border: 0px;
-                border-right: 1px solid #f7f7f7;
                 background-color: rgba(255, 233, 240, 1);
             }
         ''')

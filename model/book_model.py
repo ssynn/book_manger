@@ -82,9 +82,23 @@ class BookModel(QTreeView):
         item.triggered.connect(self.addClassifyForBookFunction)
         return item
 
+    # 设置为喜欢
+    def setFavourite(self):
+        item = QAction('&喜欢', self)
+        item.triggered.connect(self.setFavouriteFunction)
+        return item
+
+    # 设置为未读
+    def setUnread(self):
+        item = QAction('&未读', self)
+        item.triggered.connect(self.setUnreadFunction)
+        return item
+
     # 右键菜单
     def contextMenuEvent(self, e):
         contextMenu = QMenu(self)
+        contextMenu.addAction(self.setFavourite())
+        contextMenu.addAction(self.setUnread())
         contextMenu.addAction(self.openFileItem())
         contextMenu.addAction(self.modifyItem())
         contextMenu.addAction(self.deleteItem())
@@ -151,6 +165,14 @@ class BookModel(QTreeView):
             pf.addBookClassify(self.selectedIndexes()[4].data(), self.master.textOut, text)
             print('添加成功！')
             self.master.refresh()
+
+    def setFavouriteFunction(self):
+        pf.addBookClassify(self.selectedIndexes()[4].data(), self.master.textOut, '喜欢')
+        self.master.refresh()
+
+    def setUnreadFunction(self):
+        pf.addBookClassify(self.selectedIndexes()[4].data(), self.master.textOut, '未看')
+        self.master.refresh()
 
     # 修改书本信息
     def modifyFunction(self):

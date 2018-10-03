@@ -1,3 +1,4 @@
+import os
 from PyQt5.QtWidgets import (QTreeWidget, QTreeWidgetItem)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
@@ -11,11 +12,13 @@ class MyTreeView(QTreeWidget):
         super().__init__()
         self.master = master
         self.classify_all = pf.getAllClassifyName()
+        self.authorAll = os.listdir('./books')
+        self.authorAll = list(filter(isDir, self.authorAll))
         self.setColumnCount(1)
         self.setHeaderLabels(['选项'])
-        self.clicked.connect(self.treeItemHandle)
         self.setMinimumWidth(150)
-        self.setMaximumWidth(150)
+        # self.resize(150, 150)
+        self.setMaximumWidth(250)
         self.setStyleSheet('''
             QTreeWidget{
                 border: 0px;
@@ -44,6 +47,13 @@ class MyTreeView(QTreeWidget):
         unclassified.setIcon(0, QIcon('./icon/unclassified.png'))
         unclassified.setText(0, '未分类')
 
+        # 作者
+        self.author = QTreeWidgetItem(self)
+        self.author.setIcon(0, QIcon('./icon/tag.png'))
+        self.author.setText(0, '作者')
+        self.insertAuthor()
+        self.author.setExpanded(False)
+
         # 分类
         self.classify = QTreeWidgetItem(self)
         self.classify.setIcon(0, QIcon('./icon/classified.png'))
@@ -51,14 +61,20 @@ class MyTreeView(QTreeWidget):
         self.addNewClassify(self.classify_all)
         self.classify.setExpanded(True)
 
+        # 添加左键
+        self.clicked.connect(self.treeItemHandle)
+
     # 树状视图左键方法
     def treeItemHandle(self, val: object):
-        if val.data() == '分类':
+        if val.data() == '分类' or val.data() == '作者':
+            return
+        if val.data() in self.authorAll:
+            self.master.refresh(pf.search(val.data()))
             return
         self.master.selectedClassifiy = val.data()
         self.master.refresh()
 
-    # 添加分类
+    # 把子分类加入分类
     def addNewClassify(self, text: list):
         for i in text:
             child = QTreeWidgetItem(self.classify)
@@ -67,12 +83,30 @@ class MyTreeView(QTreeWidget):
 
     # 删除节点
     def deleteClassify(self, text):
+        if text not in self.classify_all:
+            return False
         item = self.findItems(text, Qt.MatchRecursive)
         if len(item) != 0:
             self.classify.removeChild(item[0])
             return True
         else:
             return False
+
+    def insertAuthor(self, author=None):
+        if author is not None:
+            child = QTreeWidgetItem(self.author)
+            child.setIcon(0, QIcon('./icon/tag.png'))
+            child.setText(0, author)
+            return
+        for i in self.authorAll:
+            child = QTreeWidgetItem(self.author)
+            child.setIcon(0, QIcon('./icon/tag.png'))
+            child.setText(0, i)
+
+
+def isDir(name: str):
+    ext = os.path.splitext(name)[1]
+    return ext == ''
 
     # # 右键菜单
     # def contextMenuEvent(self, e):

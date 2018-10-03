@@ -105,7 +105,7 @@ class MainWidget(QMainWindow):
         if dirName:
             # print(dirName)
             self.addWindow = st.SetBookMessage(dirName)
-            self.addWindow.before_close_signal.connect(
+            self.addWindow.after_close_signal.connect(
                 self.addOneNewBookFunction)
             self.addWindow.show()
         else:
@@ -114,11 +114,13 @@ class MainWidget(QMainWindow):
     # 批量添加窗口
     def addNewBooksDialog(self):
         dirName = QFileDialog.getExistingDirectory(self, '选择文件夹', './')
+        if dirName == '':
+            return
         filelist = os.listdir(dirName)
         filelist = list(filter(isDir, filelist))
         # print(dirName, filelist)
         self.addBooksWindow = sts.SetMultiMessage(filelist, dirName)
-        self.addBooksWindow.before_close_signal.connect(self.addNewBooksFunction)
+        self.addBooksWindow.after_close_signal.connect(self.addNewBooksFunction)
         self.addBooksWindow.show()
 
     # 插入新分类方法
@@ -133,15 +135,17 @@ class MainWidget(QMainWindow):
 
     # 数据处理函数
     def addOneNewBookFunction(self, value):
-        pf.addNewBook(value, self.textOut)
+        self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + '正在添加:' + value['new_name'] + ',请不要进行其他操作!')
+        pf.addNewBook(value, self)
         self.refresh()
 
     # 批量添加
     def addNewBooksFunction(self, bookList: list):
+        self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + '正在批量添加,请不要进行其他操作!')
         cnt = 0
         for i in bookList:
-            cnt += int(pf.addNewBook(i, self.textOut))
-        self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + "成功插入:" + str(cnt) + "个，失败:" + str(len(bookList)-cnt) + "个。")
+            cnt += int(pf.addNewBook(i, self))
+        self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + "成功添加:" + str(cnt) + "个，失败:" + str(len(bookList)-cnt) + "个。")
         self.refresh()
 
     # 删除分类方法
@@ -154,10 +158,9 @@ class MainWidget(QMainWindow):
 
     # 搜索方法
     def searchFunction(self):
-        self.books = pf.search(self.searchInput.text())
-        self.rightContent.deleteLater()
-        self.makeRightContent()
-        self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + "找到" + str(len(self.books)) + "条结果。")
+        if len(self.searchInput.text()) != 0:
+            self.refresh(pf.search(self.searchInput.text()))
+            self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + "找到" + str(len(self.books)) + "条结果。")
 
     # 主页面初始化
     def setMainWindow(self):
@@ -280,9 +283,11 @@ class MainWidget(QMainWindow):
         self.makeRightContent()
 
     # 刷新右上角详细书单
-    def refresh(self):
-        # print(book_list)
-        self.books = pf.getBookList(self.selectedClassifiy, self.textOut)
+    def refresh(self, val=None):
+        if val is None:
+            self.books = pf.getBookList(self.selectedClassifiy, self.textOut)
+        else:
+            self.books = val
         self.rightContent.deleteLater()
         self.makeRightContent()
 

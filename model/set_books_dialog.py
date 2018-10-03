@@ -9,7 +9,7 @@ from model import public_function as pf
 
 # self.newBook为当前显示的书本
 class SetMultiMessage(QWidget):
-    before_close_signal = pyqtSignal(list)
+    after_close_signal = pyqtSignal(list)
 
     def __init__(self, filelist: list, address: str, master=None):
         super().__init__()
@@ -20,6 +20,9 @@ class SetMultiMessage(QWidget):
             temp = pf.bookNameCut(i)
             temp['face_list'] = os.listdir(os.path.join(address, i))
             temp['face_list'] = list(filter(isPic, temp['face_list']))[:3]
+            if len(temp['face_list']) == 0:
+                print(temp['original_name'])
+                continue
             temp['face'] = temp['face_list'][0]
             temp['original_path'] = os.path.join(self.path, temp['original_name'])
             self.faceSelected = temp['face']
@@ -178,7 +181,6 @@ class SetMultiMessage(QWidget):
         self.face0.setDown(False)
         self.face1.setDown(False)
         self.face2.setDown(False)
-        # print(os.path.join(self.path, self.newBook['face_list'][0]))
         self.faceSelected = self.newBook['face']
         self.face0.setText(self.newBook['face_list'][0])
         self.face1.setText(self.newBook['face_list'][1])
@@ -240,9 +242,9 @@ class SetMultiMessage(QWidget):
                 self.bookList[i]['new_name'] += ('(' + self.bookList[i]['Cxx'] + ')')
             self.bookList[i]['address'] = os.path.join(
                 './books', self.bookList[i]['author'], self.bookList[i]['new_name'])
-        self.before_close_signal.emit(self.bookList)
-        print(self.bookList)
+
         self.close()
+        self.after_close_signal.emit(self.bookList)
 
 
 def isPic(name: str):

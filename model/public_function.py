@@ -74,49 +74,56 @@ def book_name_cut(name: str):
     return newBook
 
 
-def addNewBook(book_: dict, out_box):
-    # print(book_['original_path'], book_['address'])
+def addNewBook(book_: dict, master):
     try:
-        res = True
         conn = sqlite3.connect('./data/data.db')
         cursor = conn.cursor()
         # 把书收入库
         author_all = os.listdir('./books')
+        # 没有对应的作者目录则需要建立对应的作者目录
         if author_all.count(book_['author']) == 0:
             os.makedirs('./books/'+book_['author'])
-        os.renames(book_['original_path'], book_['address'])
+            master.leftTree.insertAuthor(book_['author'])
+            master.leftTree.authorAll.append(book_['author'])
+        # 把书移动到books文件夹内
+        shutil.move(book_['original_path'], book_['address'])
+        # 把dict内的值提取作为数组
         book_info = []
-        # 把值单独作为数组
         for i in DICTHEAD:
             book_info.append(book_[i])
         cursor.execute('''insert into books values (?,?,?,?,?,?,?,?,?,?,?,?)''', book_info)
+        res = True
     except Exception:
-        print('insertError!')
+        print(book_, book_info)
         res = False
-        out_box.append(time.strftime("%Y-%m-%d %H:%M") + '插入失败！' + book_['new_name'])
+        master.textOut.append(time.strftime("%Y-%m-%d %H:%M") + '添加失败！' + book_['new_name'])
     finally:
         cursor.close()
         if res:
             conn.commit()
+            master.textOut.append(time.strftime("%Y-%m-%d %H:%M") + '已添加:' + book_['new_name'] + "。")
         conn.close()
-        out_box.append(time.strftime("%Y-%m-%d %H:%M") + '已插入:' + book_['new_name'] + "。")
         return res
 
 
 # 修改书本信息, 此操作会删除原书然后插入修改后的书
-def modifyBookInfo(book_: dict, out_box):
+def modifyBookInfo(book_: dict, master):
     try:
         res = True
         conn = sqlite3.connect('./data/data.db')
         cursor = conn.cursor()
         # 把书收入库
         author_all = os.listdir('./books')
+        # 没有对应的作者目录则需要建立对应的作者目录
         if author_all.count(book_['author']) == 0:
             os.makedirs('./books/'+book_['author'])
+            master.leftTree.insertAuthor(book_['author'])
+            master.leftTree.authorAll.append(book_['author'])
+        # 把书移动到books文件夹内
         if book_['original_path'] != book_['address']:
-            os.renames(book_['original_path'], book_['address'])
+            shutil.move(book_['original_path'], book_['address'])
+        # 把dict内的值提取作为数组
         book_info = []
-        # 把值单独作为数组
         for i in DICTHEAD:
             book_info.append(book_[i])
         cursor.execute('''delete from books where address=?''', [book_['original_path']])
@@ -124,13 +131,13 @@ def modifyBookInfo(book_: dict, out_box):
     except Exception:
         print('modifyError!')
         res = False
-        out_box.append(time.strftime("%Y-%m-%d %H:%M") + '修改失败！')
+        master.textOut.append(time.strftime("%Y-%m-%d %H:%M") + '修改失败！')
     finally:
         cursor.close()
         if res:
             conn.commit()
         conn.close()
-        out_box.append(time.strftime("%Y-%m-%d %H:%M") + '修改成功。')
+        master.textOut.append(time.strftime("%Y-%m-%d %H:%M") + '修改成功。')
 
 
 # 传入要插入的分类名, 返回插入状态 bool
@@ -246,6 +253,8 @@ def deleteBookClassify(book_address: str, out_box, classify_name=None):
 
 # 为书本添加分类
 def addBookClassify(book_address: str, out_box, classify_name=None):
+    if classify_name is None:
+        return
     try:
         conn = sqlite3.connect('./data/data.db')
         cursor = conn.cursor()
@@ -277,7 +286,7 @@ def addBookClassify(book_address: str, out_box, classify_name=None):
         cursor.close()
         if res:
             conn.commit()
-            out_box.append(time.strftime("%Y-%m-%d %H:%M") + '添加成功。')
+            out_box.append(time.strftime("%Y-%m-%d %H:%M") + '成功为添加分类:' + str(classify_name))
         conn.close()
 
 
@@ -287,8 +296,13 @@ def deleteBook(book_address: str, out_box):
     try:
         conn = sqlite3.connect('./data/data.db')
         cursor = conn.cursor()
+        # 删除目录
         if os.path.exists(book_address):
             shutil.rmtree(book_address)
+            # 如果作者目录已经为空则删除作者目录
+            authorDir = os.path.split(book_address)[0]
+            if len(os.listdir(authorDir) == 0):
+                shutil.rmtree(authorDir)
         # # 获得这本书所有的分类
         # cursor.execute('select classify from books where address=?', [book_address])
         # classify_list = cursor.fetchall()[0][0]

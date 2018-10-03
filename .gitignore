@@ -4,3 +4,4 @@ sqlite_operation.py
 /useless
 test.py
 experiment.py
+data.db

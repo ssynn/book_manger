@@ -111,7 +111,6 @@ class BookModel(QTreeView):
     def doubleClickedFunction(self, e):
         os.system('explorer.exe %s' % os.path.abspath(
             self.selectedIndexes()[4].data()))
-        print('左键双击!', self.selectedIndexes()[4].data())
 
     # 左键单击
     def clickedFunction(self, e):
@@ -139,7 +138,6 @@ class BookModel(QTreeView):
             text += ' '
         clipboard = QApplication.clipboard()
         clipboard.setText(text)
-        print(text)
         self.master.textOut.append(time.strftime("%Y-%m-%d %H:%M") + "已复制:" + text)
 
     # 从当前分类删除
@@ -154,7 +152,6 @@ class BookModel(QTreeView):
         msgBox.addButton("取消", QMessageBox.RejectRole)
         if msgBox.exec_() == QMessageBox.AcceptRole:
             pf.deleteBookClassify(self.selectedIndexes()[4].data(), self.master.textOut, self.master.selectedClassifiy)
-            print('从当前分类删除')
             self.master.refresh()
 
     # 为当前书籍添加分类
@@ -163,7 +160,6 @@ class BookModel(QTreeView):
         text, ok = temp.getText(self, '新的分类:', '可输入多个分类(空格间隔)')
         if ok and len(text) != 0:
             pf.addBookClassify(self.selectedIndexes()[4].data(), self.master.textOut, text)
-            print('添加成功！')
             self.master.refresh()
 
     def setFavouriteFunction(self):
@@ -179,12 +175,11 @@ class BookModel(QTreeView):
         for i in self.book_:
             if i['address'] == self.selectedIndexes()[4].data():
                 self.addWindow = st.SetBookMessage(i)
-                self.addWindow.before_close_signal.connect(self.modifyFunctionBase)
+                self.addWindow.after_close_signal.connect(self.modifyFunctionBase)
                 self.addWindow.show()
 
     def modifyFunctionBase(self, value):
-        print(value)
-        pf.modifyBookInfo(value, self.master.textOut)
+        pf.modifyBookInfo(value, self.master)
 
     # list转str
     def listToStr(self, classify_names: list):

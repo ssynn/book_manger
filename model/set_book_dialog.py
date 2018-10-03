@@ -18,13 +18,15 @@ from PyQt5.QtCore import Qt, pyqtSignal, QSize
 
 # 传入完整路径初始化,返回装着书本信息的dict
 class SetBookMessage(QWidget):
-    before_close_signal = pyqtSignal(dict)
+    after_close_signal = pyqtSignal(dict)
 
     def __init__(self, book_):
         super().__init__()
+        # 直接传入书目录则表示是建立新书
         if type(book_) == str:
             self.path = book_
             self.newBook = pf.bookNameCut(os.path.split(book_)[1])
+        # 传入记录数信息的dict表示修改书信息
         else:
             self.path = book_['address']
             self.newBook = book_
@@ -59,6 +61,7 @@ class SetBookMessage(QWidget):
         classifyLabel = QLabel('分类')
         # classifyLabel.setAlignment(Qt.AlignBottom)
         self.classifyInput = QLineEdit(self)
+        self.classifyInput.setText(self.newBook['classify'])
 
         originalLabel = QLabel("源文件名")
         # originalLabel.setAlignment(Qt.AlignCenter)
@@ -142,14 +145,13 @@ class SetBookMessage(QWidget):
         self.newBook['favourite'] = int(self.favourite.isChecked())
         self.newBook['unread'] = int(self.unread.isChecked())
         self.newBook['face'] = self.faceSelected
-        self.newBook['new_name'] = '[' + self.newBook['author'] + ']' + self.newBook['book_name']
+        self.newBook['new_name'] = '[' + self.newBook['author'] + ']' + self.newBook['book_name'] + self.newBook['chinesization']
         if self.newBook['Cxx'] != 'C00':
             self.newBook['new_name'] += ('(' + self.newBook['Cxx'] + ')')
         self.newBook['address'] = os.path.join(
             './books', self.newBook['author'], self.newBook['new_name'])
-        self.before_close_signal.emit(self.newBook)
-
         self.close()
+        self.after_close_signal.emit(self.newBook)
 
     # 选择封面
     def selectFace0Function(self):

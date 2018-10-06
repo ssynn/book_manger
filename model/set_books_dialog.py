@@ -2,7 +2,7 @@ import os
 from PyQt5.QtWidgets import (QWidget, QGridLayout, QTreeView,
                              QLabel, QLineEdit, QTextEdit, QPushButton,
                              QCheckBox, QHBoxLayout, QGroupBox, QToolButton)
-from PyQt5.QtGui import QStandardItemModel, QIcon
+from PyQt5.QtGui import QStandardItemModel, QIcon, QImage
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from model import public_function as pf
 
@@ -162,6 +162,9 @@ class SetMultiMessage(QWidget):
         self.newBook['favourite'] = int(self.favourite.isChecked())
         self.newBook['unread'] = int(self.unread.isChecked())
         self.newBook['face'] = self.faceSelected
+        image = QImage()
+        image.load(os.path.join(self.path, self.newBook['face']))
+        image.save(os.path.join(self.path, self.newBook['face']))
 
     def setInformation(self):
         self.bookNameInput.setText(self.newBook['book_name'])
@@ -237,7 +240,7 @@ class SetMultiMessage(QWidget):
             if len(self.publicAuthorInput.text()) != 0:
                 self.bookList[i]['author'] = self.publicAuthorInput.text()
             # 生成最终决定的书名和地址
-            self.bookList[i]['new_name'] = '[' + self.bookList[i]['author'] + ']' + self.bookList[i]['book_name']
+            self.bookList[i]['new_name'] = '[' + self.bookList[i]['author'] + ']' + self.bookList[i]['book_name'] + '[' + self.bookList[i]['chinesization'] + ']'
             if self.bookList[i]['Cxx'] != 'C00':
                 self.bookList[i]['new_name'] += ('(' + self.bookList[i]['Cxx'] + ')')
             self.bookList[i]['address'] = os.path.join(

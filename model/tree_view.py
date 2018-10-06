@@ -1,4 +1,5 @@
 import os
+import shutil
 from PyQt5.QtWidgets import (QTreeWidget, QTreeWidgetItem)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
@@ -14,6 +15,15 @@ class MyTreeView(QTreeWidget):
         self.classify_all = pf.getAllClassifyName()
         self.authorAll = os.listdir('./books')
         self.authorAll = list(filter(isDir, self.authorAll))
+        temp = []
+        for i in self.authorAll:
+            authorDir = os.path.join('./books', i)
+            if len(os.listdir(authorDir)) == 0:
+                os.rmdir(authorDir)
+            else:
+                temp.append(i)
+        self.authorAll = temp
+
         self.setColumnCount(1)
         self.setHeaderLabels(['选项'])
         self.setMinimumWidth(150)

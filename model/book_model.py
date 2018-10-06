@@ -4,7 +4,7 @@ from model import public_function as pf
 from model import set_book_dialog as st
 from PyQt5.QtWidgets import (QAbstractItemView, QAction, QMessageBox, QMenu,
                              QApplication, QTreeView, QInputDialog)
-from PyQt5.QtGui import QStandardItemModel, QPixmap
+from PyQt5.QtGui import QStandardItemModel, QPixmap, QImage
 from PyQt5.QtCore import Qt
 
 NAME, AUTHOR, DATE, CLASSIFY, ADDRESS = range(5)
@@ -99,12 +99,12 @@ class BookModel(QTreeView):
         contextMenu = QMenu(self)
         contextMenu.addAction(self.setFavourite())
         contextMenu.addAction(self.setUnread())
+        contextMenu.addAction(self.addClassifyForBook())
+        contextMenu.addAction(self.deleteClassifyItem())
         contextMenu.addAction(self.openFileItem())
         contextMenu.addAction(self.modifyItem())
-        contextMenu.addAction(self.deleteItem())
         contextMenu.addAction(self.copyItem())
-        contextMenu.addAction(self.deleteClassifyItem())
-        contextMenu.addAction(self.addClassifyForBook())
+        contextMenu.addAction(self.deleteItem())
         contextMenu.exec_(e.globalPos())
 
     # 左键双击
@@ -175,11 +175,14 @@ class BookModel(QTreeView):
         for i in self.book_:
             if i['address'] == self.selectedIndexes()[4].data():
                 self.addWindow = st.SetBookMessage(i)
-                self.addWindow.after_close_signal.connect(self.modifyFunctionBase)
                 self.addWindow.show()
+                self.addWindow.after_close_signal.connect(self.modifyFunctionBase)
 
     def modifyFunctionBase(self, value):
-        pf.modifyBookInfo(value, self.master)
+        self.modifyBook = pf.ModifyBookInfo(value)
+        self.modifyBook.start()
+        self.modifyBook.stateChange.connect(self.master.textOut.append)
+        self.modifyBook.authorChange.connect(self.master.authorChange)
 
     # list转str
     def listToStr(self, classify_names: list):

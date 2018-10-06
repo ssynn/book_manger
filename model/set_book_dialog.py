@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (
     QToolButton,
     QGroupBox
 )
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QImage
 from PyQt5.QtCore import Qt, pyqtSignal, QSize
 
 
@@ -145,7 +145,10 @@ class SetBookMessage(QWidget):
         self.newBook['favourite'] = int(self.favourite.isChecked())
         self.newBook['unread'] = int(self.unread.isChecked())
         self.newBook['face'] = self.faceSelected
-        self.newBook['new_name'] = '[' + self.newBook['author'] + ']' + self.newBook['book_name'] + self.newBook['chinesization']
+        image = QImage()
+        image.load(os.path.join(self.path, self.newBook['face']))
+        image.save(os.path.join(self.path, self.newBook['face']))
+        self.newBook['new_name'] = '[' + self.newBook['author'] + ']' + self.newBook['book_name'] + '[' + self.newBook['chinesization'] + ']'
         if self.newBook['Cxx'] != 'C00':
             self.newBook['new_name'] += ('(' + self.newBook['Cxx'] + ')')
         self.newBook['address'] = os.path.join(

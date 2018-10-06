@@ -1,8 +1,9 @@
 import os
 import time
-from PyQt5.QtWidgets import (QWidget, QDesktopWidget, QMainWindow, QAction, QGridLayout,
-                             qApp, QInputDialog, QFileDialog, QSplitter, QLineEdit,
-                             QTextBrowser, QLabel, QVBoxLayout, QToolButton)
+from PyQt5.QtWidgets import (QWidget, QDesktopWidget, QMainWindow, QAction,
+                             QGridLayout, qApp, QInputDialog, QFileDialog,
+                             QSplitter, QLineEdit, QTextBrowser, QLabel,
+                             QVBoxLayout, QToolButton)
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import Qt
 from model import public_function as pf
@@ -120,7 +121,8 @@ class MainWidget(QMainWindow):
         filelist = list(filter(isDir, filelist))
         # print(dirName, filelist)
         self.addBooksWindow = sts.SetMultiMessage(filelist, dirName)
-        self.addBooksWindow.after_close_signal.connect(self.addNewBooksFunction)
+        self.addBooksWindow.after_close_signal.connect(
+            self.addNewBooksFunction)
         self.addBooksWindow.show()
 
     # 插入新分类方法
@@ -135,18 +137,19 @@ class MainWidget(QMainWindow):
 
     # 数据处理函数
     def addOneNewBookFunction(self, value):
-        self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + '正在添加:' + value['new_name'] + ',请不要进行其他操作!')
-        pf.addNewBook(value, self)
-        self.refresh()
+        self.addBook = pf.AddNewBook(value)
+        self.addBook.start()
+        self.addBook.stateChange.connect(self.textOut.append)
+        self.addBook.authorChange.connect(self.authorChange)
+        self.addBook.end.connect(self.refresh)
 
     # 批量添加
     def addNewBooksFunction(self, bookList: list):
-        self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + '正在批量添加,请不要进行其他操作!')
-        cnt = 0
-        for i in bookList:
-            cnt += int(pf.addNewBook(i, self))
-        self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + "成功添加:" + str(cnt) + "个，失败:" + str(len(bookList)-cnt) + "个。")
-        self.refresh()
+        self.addBooks = pf.AddNewBookS(bookList)
+        self.addBooks.start()
+        self.addBooks.stateChange.connect(self.textOut.append)
+        self.addBooks.authorChange.connect(self.authorChange)
+        self.addBooks.end.connect(self.refresh)
 
     # 删除分类方法
     def deleteClassifyFunction(self):
@@ -160,7 +163,8 @@ class MainWidget(QMainWindow):
     def searchFunction(self):
         if len(self.searchInput.text()) != 0:
             self.refresh(pf.search(self.searchInput.text()))
-            self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + "找到" + str(len(self.books)) + "条结果。")
+            self.textOut.append(time.strftime(
+                "%Y-%m-%d %H:%M") + "找到" + str(len(self.books)) + "条结果。")
 
     # 主页面初始化
     def setMainWindow(self):
@@ -197,7 +201,7 @@ class MainWidget(QMainWindow):
         if self.list_view:
             flowLayout = fl.FlowLayout()
             for i in self.books:
-                flowLayout.addWidget(pf.makeBookView(i))
+                flowLayout.addWidget(makeBookView(i))
             booksView = QWidget()
             booksView.setLayout(flowLayout)
         # 文字详情浏览
@@ -212,7 +216,8 @@ class MainWidget(QMainWindow):
             booksView.addWidget(book_model)
 
             self.picLayout = QLabel()
-            self.picLayout.setPixmap(QPixmap('./pic/face.jpg').scaled(400, 800, aspectRatioMode=Qt.KeepAspectRatio))
+            self.picLayout.setPixmap(
+                QPixmap('./pic/face.jpg').scaled(400, 800, aspectRatioMode=Qt.KeepAspectRatio))
             self.picLayout.setMaximumWidth(400)
             self.picLayout.setMinimumWidth(400)
             self.picLayout.setStyleSheet('''
@@ -302,6 +307,11 @@ class MainWidget(QMainWindow):
         self.textOut.setStyleSheet('''
             border: 0px;
         ''')
+
+    # 添加作者
+    def authorChange(self, author):
+        self.leftTree.authorAll.append(author)
+        self.leftTree.insertAuthor(author)
 
 
 def makeBookView(book: dict):

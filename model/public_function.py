@@ -5,6 +5,7 @@ import shutil
 import sqlite3
 import copy
 from model import chinesization as ch
+from PyQt5.QtCore import QThread, pyqtSignal
 
 DICTHEAD = ["address",
             "face",
@@ -20,6 +21,146 @@ DICTHEAD = ["address",
             "author"]
 
 
+# 加入新书时会开一个子线程，作者改变时会发送作者名称，书移动完成后会发送状态信息，最发送操作结果
+class AddNewBook(QThread):
+    stateChange = pyqtSignal(str)
+    authorChange = pyqtSignal(str)
+    end = pyqtSignal()
+
+    def __init__(self, book_):
+        super().__init__()
+        self.book_ = book_
+
+    def run(self):
+        try:
+            conn = sqlite3.connect('./data/data.db')
+            cursor = conn.cursor()
+            # 把书收入库
+            author_all = os.listdir('./books')
+            # 没有对应的作者目录则需要建立对应的作者目录
+            if author_all.count(self.book_['author']) == 0:
+                os.makedirs('./books/'+self.book_['author'])
+                self.authorChange.emit(self.book_['author'])
+            # 把书移动到books文件夹内
+            self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '开始添加：' + self.book_['new_name'] + ',请不要进行其他操作!')
+            shutil.move(self.book_['original_path'], self.book_['address'])
+            # 把dict内的值提取作为数组
+            book_info = []
+            for i in DICTHEAD:
+                book_info.append(self.book_[i])
+            cursor.execute('''insert into books values (?,?,?,?,?,?,?,?,?,?,?,?)''', book_info)
+            # 记录执行结果
+            res = True
+        except Exception:
+            # print(self.book_, book_info)
+            res = False
+            self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '添加失败！' + self.book_['new_name'])
+        finally:
+            if res:
+                conn.commit()
+                self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '已添加:' + self.book_['new_name'] + "。")
+            cursor.close()
+            conn.close()
+            self.end.emit()
+
+
+# 同时加入多本新书
+class AddNewBookS(QThread):
+    stateChange = pyqtSignal(str)
+    authorChange = pyqtSignal(str)
+    end = pyqtSignal()
+
+    def __init__(self, books: list):
+        super().__init__()
+        self.books = books   
+
+    def run(self):
+        cnt = 0
+        self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '正在批量添加,请不要进行其他操作!')
+        for i in self.books:
+            cnt += int(self.process(i))
+        self.stateChange.emit(
+            time.strftime("%Y-%m-%d %H:%M") +
+            "成功添加:" +
+            str(self.cnt) +
+            "个，失败:" +
+            str(len(self.books)-self.cnt) + "个。"
+        )
+        self.end.emit()
+
+    def process(self, book_):
+        try:
+            conn = sqlite3.connect('./data/data.db')
+            cursor = conn.cursor()
+            # 把书收入库
+            author_all = os.listdir('./books')
+            # 没有对应的作者目录则需要建立对应的作者目录
+            if author_all.count(book_['author']) == 0:
+                os.makedirs('./books/'+book_['author'])
+                self.authorChange.emit(book_['author'])
+            # 把书移动到books文件夹内
+            self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '开始添加：' + book_['new_name'])
+            shutil.move(book_['original_path'], book_['address'])
+            # 把dict内的值提取作为数组
+            book_info = []
+            for i in DICTHEAD:
+                book_info.append(book_[i])
+            cursor.execute('''insert into books values (?,?,?,?,?,?,?,?,?,?,?,?)''', book_info)
+            res = True
+        except Exception:
+            # print(self.book_, book_info)
+            res = False
+            self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '添加失败！' + self.book_['new_name'])
+        finally:
+            if res:
+                conn.commit()
+                self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '已添加:' + self.book_['new_name'] + "。")
+            cursor.close()
+            conn.close()
+            return res
+
+
+# 修改书的信息，子线程，作者改变时会发送作者名称，书移动完成后会发送状态信息，最发送操作结果
+class ModifyBookInfo(QThread):
+    stateChange = pyqtSignal(str)
+    authorChange = pyqtSignal(str)
+
+    def __init__(self, book_):
+        super().__init__()
+        self.book_ = book_
+
+    def run(self):
+        try:
+            conn = sqlite3.connect('./data/data.db')
+            cursor = conn.cursor()
+            # 把书收入库
+            author_all = os.listdir('./books')
+            # 没有对应的作者目录则需要建立对应的作者目录
+            if author_all.count(self.book_['author']) == 0:
+                os.makedirs('./books/'+self.book_['author'])
+                self.authorChange.emit(self.book_['author'])
+            # 把书移动到books文件夹内
+            if self.book_['original_path'] != self.book_['address']:
+                shutil.move(self.book_['original_path'], self.book_['address'])
+            # 把dict内的值提取作为数组
+            book_info = []
+            for i in DICTHEAD:
+                book_info.append(self.book_[i])
+            cursor.execute('''delete from books where address=?''', [self.book_['original_path']])
+            cursor.execute('''insert into books values (?,?,?,?,?,?,?,?,?,?,?,?)''', book_info)
+            res = True
+        except Exception:
+            print('modifyError!')
+            res = False
+            self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '修改失败！')
+        finally:
+            if res:
+                conn.commit()
+                self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '修改成功。')
+            cursor.close()
+            conn.close()
+
+
 # 只是提出参考
 def book_name_cut(name: str):
     newBook = {
@@ -29,10 +170,10 @@ def book_name_cut(name: str):
         "Cxx": "C00",                           # 预设
         "chinesization": "未知",                # 预设
         "author": "未知",                       # 预设
-        "favourite": 0,                         # 不预设
+        "favourite": 0,                         # 预设
         "date": time.strftime("%Y-%m-%d"),      # 预设
         "address": "",                          # 不预设
-        "unread": 0,                            # 不预设
+        "unread": 0,                            # 预设
         "original_name": name,                  # 预设
         "new_name": ""                          # 不预设
     }
@@ -72,72 +213,6 @@ def book_name_cut(name: str):
         newBook['author'] = book_name[0][1:-1]
     newBook['book_name'] = name.replace(' ', '')
     return newBook
-
-
-def addNewBook(book_: dict, master):
-    try:
-        conn = sqlite3.connect('./data/data.db')
-        cursor = conn.cursor()
-        # 把书收入库
-        author_all = os.listdir('./books')
-        # 没有对应的作者目录则需要建立对应的作者目录
-        if author_all.count(book_['author']) == 0:
-            os.makedirs('./books/'+book_['author'])
-            master.leftTree.insertAuthor(book_['author'])
-            master.leftTree.authorAll.append(book_['author'])
-        # 把书移动到books文件夹内
-        shutil.move(book_['original_path'], book_['address'])
-        # 把dict内的值提取作为数组
-        book_info = []
-        for i in DICTHEAD:
-            book_info.append(book_[i])
-        cursor.execute('''insert into books values (?,?,?,?,?,?,?,?,?,?,?,?)''', book_info)
-        res = True
-    except Exception:
-        print(book_, book_info)
-        res = False
-        master.textOut.append(time.strftime("%Y-%m-%d %H:%M") + '添加失败！' + book_['new_name'])
-    finally:
-        cursor.close()
-        if res:
-            conn.commit()
-            master.textOut.append(time.strftime("%Y-%m-%d %H:%M") + '已添加:' + book_['new_name'] + "。")
-        conn.close()
-        return res
-
-
-# 修改书本信息, 此操作会删除原书然后插入修改后的书
-def modifyBookInfo(book_: dict, master):
-    try:
-        res = True
-        conn = sqlite3.connect('./data/data.db')
-        cursor = conn.cursor()
-        # 把书收入库
-        author_all = os.listdir('./books')
-        # 没有对应的作者目录则需要建立对应的作者目录
-        if author_all.count(book_['author']) == 0:
-            os.makedirs('./books/'+book_['author'])
-            master.leftTree.insertAuthor(book_['author'])
-            master.leftTree.authorAll.append(book_['author'])
-        # 把书移动到books文件夹内
-        if book_['original_path'] != book_['address']:
-            shutil.move(book_['original_path'], book_['address'])
-        # 把dict内的值提取作为数组
-        book_info = []
-        for i in DICTHEAD:
-            book_info.append(book_[i])
-        cursor.execute('''delete from books where address=?''', [book_['original_path']])
-        cursor.execute('''insert into books values (?,?,?,?,?,?,?,?,?,?,?,?)''', book_info)
-    except Exception:
-        print('modifyError!')
-        res = False
-        master.textOut.append(time.strftime("%Y-%m-%d %H:%M") + '修改失败！')
-    finally:
-        cursor.close()
-        if res:
-            conn.commit()
-        conn.close()
-        master.textOut.append(time.strftime("%Y-%m-%d %H:%M") + '修改成功。')
 
 
 # 传入要插入的分类名, 返回插入状态 bool
@@ -212,7 +287,6 @@ def bookNameCut(book_name: str):
 # 从当前分类删除
 def deleteBookClassify(book_address: str, out_box, classify_name=None):
     try:
-        # print(book_address, classify_name)
         conn = sqlite3.connect('./data/data.db')
         cursor = conn.cursor()
         # 删除未读
@@ -244,9 +318,9 @@ def deleteBookClassify(book_address: str, out_box, classify_name=None):
         print('删除时出现错误!')
         print(e)
     finally:
-        cursor.close()
         if res:
             conn.commit()
+        cursor.close()
         conn.close()
         out_box.append(time.strftime("%Y-%m-%d %H:%M") + '移除完毕。')
 
@@ -283,10 +357,10 @@ def addBookClassify(book_address: str, out_box, classify_name=None):
         out_box.append(time.strftime("%Y-%m-%d %H:%M") + '添加失败。')
         print('添加时出现错误!')
     finally:
-        cursor.close()
         if res:
             conn.commit()
             out_box.append(time.strftime("%Y-%m-%d %H:%M") + '成功为添加分类:' + str(classify_name))
+        cursor.close()
         conn.close()
 
 
@@ -303,28 +377,16 @@ def deleteBook(book_address: str, out_box):
             authorDir = os.path.split(book_address)[0]
             if len(os.listdir(authorDir) == 0):
                 shutil.rmtree(authorDir)
-        # # 获得这本书所有的分类
-        # cursor.execute('select classify from books where address=?', [book_address])
-        # classify_list = cursor.fetchall()[0][0]
-        # classify_list = classify_list.split()
-        # 删除这本书
         cursor.execute("delete from books where address=?", [book_address])
-        # # 删除对应分类下的书本
-        # for i in classify_list:
-        #     cursor.execute("select book_list from classify where name=?", i)
-        #     book_list = cursor.fetchall()
-        #     book_list = json.loads(book_list)
-        #     book_list.remove(i)
-        #     cursor.execute("update classify set book_list=? where name=?", [json.dumps(book_list), i])
         res = True
     except Exception as e:
         res = False
         out_box.append(time.strftime("%Y-%m-%d %H:%M") + '移除失败。')
         print('删除时出现错误!')
     finally:
-        cursor.close()
         if res:
             conn.commit()
+        cursor.close()
         conn.close()
 
 
@@ -344,6 +406,7 @@ def toDictList(book_list: list):
             "new_name": "",
             "author": "未知",
         }
+    # 存放结果
     temp = []
     for i in book_list:
         newBook = copy.deepcopy(model)

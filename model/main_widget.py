@@ -19,6 +19,7 @@ class MainWidget(QMainWindow):
         super().__init__()
         self.selectedClassifiy = '未看'
         self.list_view = False
+        self.setAcceptDrops(True)
         self.books = pf.getBookList('未看')
         self.initUI()
 
@@ -109,16 +110,20 @@ class MainWidget(QMainWindow):
         editMenu.addAction(self.modifyMultiBooks())
 
     # 插入新书对话框
-    def addOneNewBookDialog(self):
+    def addOneNewBookDialog(self, address=None):
         # 读取上次打开的目录作为起始目录
         with open('./data/path.txt', 'r', encoding="UTF-8") as p:
             path = p.read()
-        dirName = QFileDialog.getExistingDirectory(self, '选择文件夹', path)
+        if address is None:
+            dirName = QFileDialog.getExistingDirectory(self, '选择文件夹', path)
+        else:
+            dirName = address
         if dirName:
             # 保持当前所在的目录
             path = os.path.split(dirName)[0]
             with open('./data/path.txt', 'w', encoding="UTF-8") as p:
                 p.write(path)
+
             self.addWindow = st.SetBookMessage(dirName)
             self.addWindow.after_close_signal.connect(self.addOneNewBookFunction)
             self.addWindow.stateChange.connect(self.textOut.append)
@@ -126,20 +131,27 @@ class MainWidget(QMainWindow):
             print('error!')
 
     # 批量添加窗口
-    def addNewBooksDialog(self):
-        # 读取上次打开的目录作为起始目录
-        with open('./data/path.txt', 'r', encoding="UTF-8") as p:
-            path = p.read()
-        dirName = QFileDialog.getExistingDirectory(self, '选择文件夹', path)
-        if dirName == '':
-            return
-        # 保存当前所在的目录
-        path = os.path.split(dirName)[0]
-        with open('./data/path.txt', 'w', encoding="UTF-8") as p:
-            p.write(path)
-        filelist = os.listdir(dirName)
-        filelist = list(filter(isDir, filelist))
-        self.addBooksWindow = sts.SetMultiMessage(filelist, dirName)
+    def addNewBooksDialog(self, addressList=None):
+        # 打开文件夹
+        if not addressList:
+            # 读取上次打开的目录作为起始目录
+            with open('./data/path.txt', 'r', encoding="UTF-8") as p:
+                path = p.read()
+            dirName = QFileDialog.getExistingDirectory(self, '选择文件夹', path)
+            if dirName == '':
+                return
+            path = os.path.split(dirName)[0]
+            # 保存当前所在的目录
+            with open('./data/path.txt', 'w', encoding="UTF-8") as p:
+                p.write(path)
+            filelist = os.listdir(dirName)
+            filelist = list(filter(isDir, filelist))
+            filelist = [os.path.join(dirName, x) for x in filelist]
+        else:
+            filelist = addressList
+        # print(filelist)
+        # 传入父文件夹地址和文件夹内的子文件夹名
+        self.addBooksWindow = sts.SetMultiMessage(filelist=filelist, address=True)
         self.addBooksWindow.stateChange.connect(self.textOut.append)
         self.addBooksWindow.after_close_signal.connect(self.addNewBooksFunction)
 
@@ -343,6 +355,20 @@ class MainWidget(QMainWindow):
     def authorChange(self, author):
         self.leftTree.authorAll.append(author)
         self.leftTree.insertAuthor(author)
+
+    # 拖拽添加
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        if event.mimeData().hasUrls():
+            if len(event.mimeData().urls()) == 1:
+                self.addOneNewBookDialog(event.mimeData().urls()[0].toLocalFile())
+            else:
+                url = [str(x.toLocalFile()) for x in event.mimeData().urls()]
+                self.addNewBooksDialog(url)
+            event.acceptProposedAction()
 
 
 def makeBookView(book: dict):

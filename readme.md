@@ -92,6 +92,7 @@ cursor.execute('''create table classify(
 * 2018-10-07
   * 创建预览图以提升体验
   * 小修小补
+  * 拖拽添加
 
 <!-- 
 ### 加载

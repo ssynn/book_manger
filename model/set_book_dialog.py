@@ -109,6 +109,7 @@ class SetBookMessage(QWidget):
         self.face0.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.face0.clicked.connect(self.selectFace0Function)
         self.face0.setDown(True)
+        self.face0.setMaximumWidth(100)
         self.pic_layout.addWidget(self.face0)
 
         self.face1 = QToolButton()
@@ -117,6 +118,7 @@ class SetBookMessage(QWidget):
         self.face1.setIconSize(QSize(100, 100))
         self.face1.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.face1.clicked.connect(self.selectFace1Function)
+        self.face1.setMaximumWidth(100)
         self.pic_layout.addWidget(self.face1)
 
         self.face2 = QToolButton()
@@ -125,6 +127,7 @@ class SetBookMessage(QWidget):
         self.face2.setIconSize(QSize(100, 100))
         self.face2.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.face2.clicked.connect(self.selectFace2Function)
+        self.face2.setMaximumWidth(100)
         self.pic_layout.addWidget(self.face2)
 
         gLayOut.addWidget(pics, 7, 0, 3, 5)
@@ -179,6 +182,7 @@ class SetBookMessage(QWidget):
         self.face1.setDown(False)
         self.face2.setDown(True)
         self.faceSelected = self.faceList[2]
+
 
 def isPic(name: str):
     ext = os.path.splitext(name)[1]

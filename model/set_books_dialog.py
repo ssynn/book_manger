@@ -8,26 +8,27 @@ from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from model import public_function as pf
 
 
-# self.newBook为当前显示的书本
+# self.newBook为当前显示的书本, 传入文件地址列表或书籍信息列表初始化
 class SetMultiMessage(QWidget):
     stateChange = pyqtSignal(str)
     after_close_signal = pyqtSignal(list)
 
-    def __init__(self, filelist: list, address=None, master=None):
+    # address 为 True说明传入的是地址否则为书籍信息
+    def __init__(self, filelist: list, address=False, master=None):
         super().__init__()
-        self.path = address
         # 书名分割
         self.bookList = []
-        if address is not None:
+        if address:
             for i in filelist:
-                temp = pf.bookNameCut(i)
-                temp['face_list'] = os.listdir(os.path.join(address, i))[:6]
+                dirName = os.path.split(i)[1]
+                temp = pf.bookNameCut(dirName)
+                temp['face_list'] = os.listdir(i)[:6]
                 temp['face_list'] = list(filter(isPic, temp['face_list']))[:3]
                 if len(temp['face_list']) < 3:
                     print(temp['original_name'])
                     continue
                 temp['face'] = temp['face_list'][0]
-                temp['original_path'] = os.path.join(self.path, temp['original_name'])
+                temp['original_path'] = i
                 temp['drop'] = False
                 self.bookList.append(temp)
         else:
@@ -276,4 +277,4 @@ class SetMultiMessage(QWidget):
 
 def isPic(name: str):
     ext = os.path.splitext(name)[1]
-    return ext == '.jpg' or ext == '.png' or ext == '.jpeg'
+    return ext == '.jpg' or ext == '.png' or ext == '.jpeg' or ext == '.JPG'

@@ -36,6 +36,8 @@ class AddNewBook(QThread):
         try:
             conn = sqlite3.connect('./data/data.db')
             cursor = conn.cursor()
+            if len(cursor.execute('''select original_name from books where original_name=?''', [self.book_['original_name']]).fetchall()) != 0:
+                raise Exception
             # 把书收入库
             author_all = os.listdir('./books')
             # 没有对应的作者目录则需要建立对应的作者目录
@@ -80,6 +82,7 @@ class AddNewBookS(QThread):
     def run(self):
         self.conn = sqlite3.connect('./data/data.db')
         self.cursor = self.conn.cursor()
+        self.author_all = os.listdir('./books')
         cnt = 0
         self.no = 1
         self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '正在批量添加,请不要进行其他操作!')
@@ -99,10 +102,10 @@ class AddNewBookS(QThread):
 
     def process(self, book_):
         try:
-            # 把书收入库
-            author_all = os.listdir('./books')
+            if len(self.cursor.execute('''select original_name from books where original_name=?''', [book_['original_name']]).fetchall()) != 0:
+                raise Exception
             # 没有对应的作者目录则需要建立对应的作者目录
-            if author_all.count(book_['author']) == 0:
+            if self.author_all.count(book_['author']) == 0:
                 os.makedirs('./books/'+book_['author'])
                 self.authorChange.emit(book_['author'])
             # 把书移动到books文件夹内
@@ -117,7 +120,6 @@ class AddNewBookS(QThread):
             self.cursor.execute('''insert into books values (?,?,?,?,?,?,?,?,?,?,?,?)''', book_info)
             res = True
         except Exception:
-            # print(self.book_, book_info)
             res = False
             self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '添加失败！' + book_['new_name'])
         finally:
@@ -252,6 +254,7 @@ def book_name_cut(name: str):
         "original_name": name,                  # 预设
         "new_name": ""                          # 不预设
     }
+    name.replace('[S版]', '')
     comic_market = re.search(r"C\d{2,3}", name, re.I)
     name = re.sub(r"\(C\d{2,3}\)", '', name)
     if comic_market:

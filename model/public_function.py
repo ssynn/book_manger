@@ -4,6 +4,7 @@ import os
 import shutil
 import sqlite3
 import copy
+from PIL import Image
 from model import chinesization as ch
 from PyQt5.QtCore import QThread, pyqtSignal
 
@@ -43,6 +44,8 @@ class AddNewBook(QThread):
                 self.authorChange.emit(self.book_['author'])
             # 把书移动到books文件夹内
             self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '开始添加：' + self.book_['new_name'] + ',请不要进行其他操作!')
+            # 移动之前先产生缩略图
+            makeFace(os.path.join(self.book_['original_path'], self.book_['face']))
             shutil.move(self.book_['original_path'], self.book_['address'])
             # 把dict内的值提取作为数组
             book_info = []
@@ -72,26 +75,30 @@ class AddNewBookS(QThread):
 
     def __init__(self, books: list):
         super().__init__()
-        self.books = books   
+        self.books = books
 
     def run(self):
+        self.conn = sqlite3.connect('./data/data.db')
+        self.cursor = self.conn.cursor()
         cnt = 0
+        self.no = 1
         self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '正在批量添加,请不要进行其他操作!')
         for i in self.books:
             cnt += int(self.process(i))
+            self.no += 1
         self.stateChange.emit(
             time.strftime("%Y-%m-%d %H:%M") +
             "成功添加:" +
-            str(self.cnt) +
+            str(cnt) +
             "个，失败:" +
-            str(len(self.books)-self.cnt) + "个。"
+            str(len(self.books)-cnt) + "个。"
         )
+        self.cursor.close()
+        self.conn.close()
         self.end.emit()
 
     def process(self, book_):
         try:
-            conn = sqlite3.connect('./data/data.db')
-            cursor = conn.cursor()
             # 把书收入库
             author_all = os.listdir('./books')
             # 没有对应的作者目录则需要建立对应的作者目录
@@ -99,24 +106,25 @@ class AddNewBookS(QThread):
                 os.makedirs('./books/'+book_['author'])
                 self.authorChange.emit(book_['author'])
             # 把书移动到books文件夹内
-            self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '开始添加：' + book_['new_name'])
+            self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '开始添加：('+str(self.no) + '/' + str(len(self.books)) + ')' + book_['new_name'])
+            # 移动之前先产生缩略图
+            makeFace(os.path.join(book_['original_path'], book_['face']))
             shutil.move(book_['original_path'], book_['address'])
             # 把dict内的值提取作为数组
             book_info = []
             for i in DICTHEAD:
                 book_info.append(book_[i])
-            cursor.execute('''insert into books values (?,?,?,?,?,?,?,?,?,?,?,?)''', book_info)
+            self.cursor.execute('''insert into books values (?,?,?,?,?,?,?,?,?,?,?,?)''', book_info)
             res = True
         except Exception:
             # print(self.book_, book_info)
             res = False
-            self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '添加失败！' + self.book_['new_name'])
+            self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '添加失败！' + book_['new_name'])
         finally:
             if res:
-                conn.commit()
-                self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '已添加:' + self.book_['new_name'] + "。")
-            cursor.close()
-            conn.close()
+                self.conn.commit()
+                self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '已添加:' + book_['new_name'] + "。")
+
             return res
 
 
@@ -124,6 +132,7 @@ class AddNewBookS(QThread):
 class ModifyBookInfo(QThread):
     stateChange = pyqtSignal(str)
     authorChange = pyqtSignal(str)
+    end = pyqtSignal()
 
     def __init__(self, book_):
         super().__init__()
@@ -140,6 +149,8 @@ class ModifyBookInfo(QThread):
                 os.makedirs('./books/'+self.book_['author'])
                 self.authorChange.emit(self.book_['author'])
             # 把书移动到books文件夹内
+            # 移动之前先产生缩略图
+            makeFace(os.path.join(self.book_['original_path'], self.book_['face']))
             if self.book_['original_path'] != self.book_['address']:
                 shutil.move(self.book_['original_path'], self.book_['address'])
             # 把dict内的值提取作为数组
@@ -157,8 +168,72 @@ class ModifyBookInfo(QThread):
             if res:
                 conn.commit()
                 self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '修改成功。')
+                self.end.emit()
             cursor.close()
             conn.close()
+
+
+# 修改书的信息，子线程，作者改变时会发送作者名称，书移动完成后会发送状态信息，最发送操作结果
+class ModifyMultiBookInfo(QThread):
+    stateChange = pyqtSignal(str)
+    authorChange = pyqtSignal(str)
+    end = pyqtSignal()
+
+    def __init__(self, bookList: list):
+        super().__init__()
+        self.bookList = bookList
+
+    def run(self):
+        self.conn = sqlite3.connect('./data/data.db')
+        self.cursor = self.conn.cursor()
+        cnt = 0
+        self.no = 1
+        self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '正在批量添加,请不要进行其他操作!')
+        for i in self.bookList:
+            self.book_ = i
+            cnt += int(self.process())
+            self.no += 1
+        self.stateChange.emit(
+            time.strftime("%Y-%m-%d %H:%M") +
+            "成功修改:" +
+            str(cnt) +
+            "个，失败:" +
+            str(len(self.bookList)-cnt) + "个。"
+        )
+        self.cursor.close()
+        self.conn.close()
+        self.end.emit()
+
+    def process(self):
+        try:
+            # 把书收入库
+            author_all = os.listdir('./books')
+            # 没有对应的作者目录则需要建立对应的作者目录
+            if author_all.count(self.book_['author']) == 0:
+                os.makedirs('./books/'+self.book_['author'])
+                self.authorChange.emit(self.book_['author'])
+            # 把书移动到books文件夹内
+            # 移动之前先产生缩略图
+            makeFace(os.path.join(self.book_['original_path'], self.book_['face']))
+            if self.book_['original_path'] != self.book_['address']:
+                shutil.move(self.book_['original_path'], self.book_['address'])
+            # 把dict内的值提取作为数组
+            book_info = []
+            for i in DICTHEAD:
+                book_info.append(self.book_[i])
+            self.cursor.execute('''delete from books where address=?''', [self.book_['original_path']])
+            self.cursor.execute('''insert into books values (?,?,?,?,?,?,?,?,?,?,?,?)''', book_info)
+            res = True
+        except Exception:
+            print('modifyError!')
+            res = False
+            self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + self.book_['new_name'] + '修改失败！')
+        finally:
+            if res:
+                self.conn.commit()
+                self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '(' + str(self.no) + '/' + str(len(self.bookList)) + ')' + self.book_['new_name'] + '修改成功。')
+
+            return res
 
 
 # 只是提出参考
@@ -168,8 +243,8 @@ def book_name_cut(name: str):
         "classify": "",                         # 不预设
         "book_name": "",                        # 预设
         "Cxx": "C00",                           # 预设
-        "chinesization": "未知",                # 预设
-        "author": "未知",                       # 预设
+        "chinesization": "未知汉化",                # 预设
+        "author": "未知作者",                       # 预设
         "favourite": 0,                         # 预设
         "date": time.strftime("%Y-%m-%d"),      # 预设
         "address": "",                          # 不预设
@@ -275,8 +350,22 @@ def getBookList(classify_name: str, out_box=None):
         cursor.close()
         conn.close()
         return toDictList(data)
-        # if out_box:
-        #     out_box.append(time.strftime("%Y-%m-%d %H:%M") + '获取列表完毕。')
+
+
+# 通过查找分类返回包含完整书本信息的dict列表，使用glob查找
+def getBookListByAuthor(author_name: str, out_box=None):
+    try:
+        conn = sqlite3.connect('./data/data.db')
+        cursor = conn.cursor()
+        data = cursor.execute("select * from books where author=? ", [author_name]).fetchall()
+    except Exception:
+        print('获取目录失败！')
+        if out_box:
+            out_box.append(time.strftime("%Y-%m-%d %H:%M") + '获取目录失败！')
+    finally:
+        cursor.close()
+        conn.close()
+        return toDictList(data)
 
 
 # 书名切割
@@ -297,15 +386,7 @@ def deleteBookClassify(book_address: str, out_box, classify_name=None):
             cursor.execute('update books set favourite=0 where address=?', [book_address])
         # 从特定分类中删除
         else:
-            # # 获取分类下所有书
-            # cursor.execute("select book_list from classify where name=?", [classify_name])
-            # book_list = cursor.fetchall()
-            # book_list = json.loads(book_list)
-            # book_list.remove(book_address)
-            # cursor.execute("update classify set book_list=? where name=?", [json.dumps(book_list), classify_name])
-            # 在书的分类列表中移除分类
             classify_list = cursor.execute("select classify from books where address=?", [book_address]).fetchall()[0][0]
-            print(classify_list)
             classify_list = classify_list.split()
             classify_list.remove(classify_name)
             classify_list = str(classify_list)
@@ -342,7 +423,6 @@ def addBookClassify(book_address: str, out_box, classify_name=None):
         else:
             # 在书的分类列表中添加分类
             classify_list = cursor.execute("select classify from books where address=?", [book_address]).fetchall()[0][0]
-            # print(classify_list)
             classify_list = classify_list.split()
             classify_name = classify_name.split()
             for i in classify_name:
@@ -373,19 +453,16 @@ def deleteBook(book_address: str, out_box):
         # 删除目录
         if os.path.exists(book_address):
             shutil.rmtree(book_address)
-            # 如果作者目录已经为空则删除作者目录
-            authorDir = os.path.split(book_address)[0]
-            if len(os.listdir(authorDir) == 0):
-                shutil.rmtree(authorDir)
         cursor.execute("delete from books where address=?", [book_address])
         res = True
     except Exception as e:
         res = False
-        out_box.append(time.strftime("%Y-%m-%d %H:%M") + '移除失败。')
+        out_box.append(time.strftime("%Y-%m-%d %H:%M") + '删除失败。')
         print('删除时出现错误!')
     finally:
         if res:
             conn.commit()
+            out_box.append(time.strftime("%Y-%m-%d %H:%M") + '删除成功。')
         cursor.close()
         conn.close()
 
@@ -437,12 +514,11 @@ def getAllClassifyName():
 def search(val: str):
     val = val.split()
     data = []
-    # print(val)
     try:
         conn = sqlite3.connect('./data/data.db')
         cursor = conn.cursor()
         for i in val:
-            temp = cursor.execute("select * from books where original_name glob ?", ['*' + i + '*']).fetchall()
+            temp = cursor.execute("select * from books where new_name glob ?", ['*' + i + '*']).fetchall()
             data += temp
             temp = cursor.execute("select * from books where classify glob ?", ['*' + i + '*']).fetchall()
             data += temp
@@ -453,3 +529,22 @@ def search(val: str):
         cursor.close()
         conn.close()
         return toDictList(data)
+
+
+# 产生缩略图并保存副本传入图片的路径
+def makeFace(path: str):
+    img = Image.open(path)
+    width, height = img.size
+    if width <= 400:
+        return
+    headPath, imgNameAll = os.path.split(path)
+    img.save(os.path.join(headPath, '备份' + imgNameAll))
+    ratio = float(width) / float(height)
+    width = 400.0
+    height = width / ratio
+    width = int(width)
+    height = int(height)
+    img = img.resize((width, height), Image.BICUBIC)
+    # img.show()
+    # os.remove(path)
+    img.save(path)

@@ -1,4 +1,5 @@
 import os
+import time
 from model import public_function as pf
 from PyQt5.QtWidgets import (
     QWidget,
@@ -19,6 +20,7 @@ from PyQt5.QtCore import Qt, pyqtSignal, QSize
 # 传入完整路径初始化,返回装着书本信息的dict
 class SetBookMessage(QWidget):
     after_close_signal = pyqtSignal(dict)
+    stateChange = pyqtSignal(str)
 
     def __init__(self, book_):
         super().__init__()
@@ -30,9 +32,11 @@ class SetBookMessage(QWidget):
         else:
             self.path = book_['address']
             self.newBook = book_
-        self.faceList = os.listdir(self.path)[:3]
+        self.faceList = list(filter(isPic, os.listdir(self.path)[:6]))[:3]
+        if len(self.faceList) < 3:
+            self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + "无法添加此目录!")
+            return
         self.faceSelected = self.faceList[0]
-
         self.setMainWindow()
         self.initUI()
 
@@ -126,6 +130,7 @@ class SetBookMessage(QWidget):
         gLayOut.addWidget(pics, 7, 0, 3, 5)
 
         self.setLayout(gLayOut)
+        self.show()
 
     def setMainWindow(self):
         # 设置位置和大小
@@ -137,7 +142,7 @@ class SetBookMessage(QWidget):
     def confirm(self):
         # 除了时间和originalname其他都需要在这里做决定
         self.newBook['original_path'] = self.path
-        self.newBook['author'] = self.authorInput.text()
+        self.newBook['author'] = self.authorInput.text().replace(' ', '')
         self.newBook['book_name'] = self.bookNameInput.text()
         self.newBook['Cxx'] = self.comicMarketInput.text()
         self.newBook['chinesization'] = self.chinesizationInput.text()
@@ -174,3 +179,7 @@ class SetBookMessage(QWidget):
         self.face1.setDown(False)
         self.face2.setDown(True)
         self.faceSelected = self.faceList[2]
+
+def isPic(name: str):
+    ext = os.path.splitext(name)[1]
+    return ext == '.jpg' or ext == '.png' or ext == '.jpeg'

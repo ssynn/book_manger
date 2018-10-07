@@ -4,7 +4,7 @@ from model import public_function as pf
 from model import set_book_dialog as st
 from PyQt5.QtWidgets import (QAbstractItemView, QAction, QMessageBox, QMenu,
                              QApplication, QTreeView, QInputDialog)
-from PyQt5.QtGui import QStandardItemModel, QPixmap, QImage
+from PyQt5.QtGui import QStandardItemModel, QPixmap
 from PyQt5.QtCore import Qt
 
 NAME, AUTHOR, DATE, CLASSIFY, ADDRESS = range(5)
@@ -183,6 +183,7 @@ class BookModel(QTreeView):
         self.modifyBook.start()
         self.modifyBook.stateChange.connect(self.master.textOut.append)
         self.modifyBook.authorChange.connect(self.master.authorChange)
+        self.modifyBook.end.connect(self.master.refresh)
 
     # list转str
     def listToStr(self, classify_names: list):

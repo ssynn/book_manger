@@ -7,6 +7,8 @@ from model import main_widget
 if __name__ == '__main__':
     if 'data' not in os.listdir('./'):
         os.mkdir('data')
+        with open('./data/path.json', 'w') as p:
+            p.write('./')
     # 检查数据库
     conn = sqlite3.connect('./data/data.db')
     cursor = conn.cursor()

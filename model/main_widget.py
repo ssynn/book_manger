@@ -88,6 +88,13 @@ class MainWidget(QMainWindow):
         item.triggered.connect(self.deleteClassifyFunction)
         return item
 
+    # 批量修改
+    def modifyMultiBooks(self):
+        item = QAction('修改当前页的所有书籍信息', self)
+        item.setShortcut('Ctrl+M')
+        item.triggered.connect(self.modifyMultiBooksDialog)
+        return item
+
     # 总菜单设置
     def setMenu(self):
         menubar = self.menuBar()
@@ -99,31 +106,42 @@ class MainWidget(QMainWindow):
         # editMenu.addAction(self.swiftItemView())
         editMenu.addAction(self.addClassify())
         editMenu.addAction(self.deleteClassify())
+        editMenu.addAction(self.modifyMultiBooks())
 
     # 插入新书对话框
     def addOneNewBookDialog(self):
-        dirName = QFileDialog.getExistingDirectory(self, '选择文件夹', './')
+        # 读取上次打开的目录作为起始目录
+        with open('./data/path.txt', 'r', encoding="UTF-8") as p:
+            path = p.read()
+        dirName = QFileDialog.getExistingDirectory(self, '选择文件夹', path)
         if dirName:
-            # print(dirName)
+            # 保持当前所在的目录
+            path = os.path.split(dirName)[0]
+            with open('./data/path.txt', 'w', encoding="UTF-8") as p:
+                p.write(path)
             self.addWindow = st.SetBookMessage(dirName)
-            self.addWindow.after_close_signal.connect(
-                self.addOneNewBookFunction)
-            self.addWindow.show()
+            self.addWindow.after_close_signal.connect(self.addOneNewBookFunction)
+            self.addWindow.stateChange.connect(self.textOut.append)
         else:
             print('error!')
 
     # 批量添加窗口
     def addNewBooksDialog(self):
-        dirName = QFileDialog.getExistingDirectory(self, '选择文件夹', './')
+        # 读取上次打开的目录作为起始目录
+        with open('./data/path.txt', 'r', encoding="UTF-8") as p:
+            path = p.read()
+        dirName = QFileDialog.getExistingDirectory(self, '选择文件夹', path)
         if dirName == '':
             return
+        # 保存当前所在的目录
+        path = os.path.split(dirName)[0]
+        with open('./data/path.txt', 'w', encoding="UTF-8") as p:
+            p.write(path)
         filelist = os.listdir(dirName)
         filelist = list(filter(isDir, filelist))
-        # print(dirName, filelist)
         self.addBooksWindow = sts.SetMultiMessage(filelist, dirName)
-        self.addBooksWindow.after_close_signal.connect(
-            self.addNewBooksFunction)
-        self.addBooksWindow.show()
+        self.addBooksWindow.stateChange.connect(self.textOut.append)
+        self.addBooksWindow.after_close_signal.connect(self.addNewBooksFunction)
 
     # 插入新分类方法
     def addNewClassifyFunction(self):
@@ -135,7 +153,7 @@ class MainWidget(QMainWindow):
             else:
                 self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + "添加失败!")
 
-    # 数据处理函数
+    # 数据处理函数线程
     def addOneNewBookFunction(self, value):
         self.addBook = pf.AddNewBook(value)
         self.addBook.start()
@@ -143,7 +161,7 @@ class MainWidget(QMainWindow):
         self.addBook.authorChange.connect(self.authorChange)
         self.addBook.end.connect(self.refresh)
 
-    # 批量添加
+    # 批量添加线程
     def addNewBooksFunction(self, bookList: list):
         self.addBooks = pf.AddNewBookS(bookList)
         self.addBooks.start()
@@ -158,6 +176,19 @@ class MainWidget(QMainWindow):
             pass
         else:
             self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + "删除失败!")
+
+    # 批量修改信息方法
+    def modifyMultiBooksDialog(self):
+        self.modifiBooks = sts.SetMultiMessage(self.books)
+        self.modifiBooks.after_close_signal.connect(self.modifyMultiBooksFunction)
+
+    # 批量修改信息方法线程
+    def modifyMultiBooksFunction(self, bookList):
+        self.modifyBooks = pf.ModifyMultiBookInfo(bookList)
+        self.modifyBooks.start()
+        self.modifyBooks.stateChange.connect(self.textOut.append)
+        self.modifyBooks.authorChange.connect(self.authorChange)
+        self.modifyBooks.end.connect(self.refresh)
 
     # 搜索方法
     def searchFunction(self):

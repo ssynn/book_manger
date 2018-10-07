@@ -1,5 +1,4 @@
 import os
-import shutil
 from PyQt5.QtWidgets import (QTreeWidget, QTreeWidgetItem)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
@@ -79,7 +78,7 @@ class MyTreeView(QTreeWidget):
         if val.data() == '分类' or val.data() == '作者':
             return
         if val.data() in self.authorAll:
-            self.master.refresh(pf.search(val.data()))
+            self.master.refresh(pf.getBookListByAuthor(val.data()))
             return
         self.master.selectedClassifiy = val.data()
         self.master.refresh()

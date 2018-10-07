@@ -1,4 +1,5 @@
 import os
+import time
 from PyQt5.QtWidgets import (QWidget, QGridLayout, QTreeView,
                              QLabel, QLineEdit, QTextEdit, QPushButton,
                              QCheckBox, QHBoxLayout, QGroupBox, QToolButton)
@@ -9,26 +10,39 @@ from model import public_function as pf
 
 # self.newBook为当前显示的书本
 class SetMultiMessage(QWidget):
+    stateChange = pyqtSignal(str)
     after_close_signal = pyqtSignal(list)
 
-    def __init__(self, filelist: list, address: str, master=None):
+    def __init__(self, filelist: list, address=None, master=None):
         super().__init__()
         self.path = address
         # 书名分割
         self.bookList = []
-        for i in filelist:
-            temp = pf.bookNameCut(i)
-            temp['face_list'] = os.listdir(os.path.join(address, i))
-            temp['face_list'] = list(filter(isPic, temp['face_list']))[:3]
-            if len(temp['face_list']) == 0:
-                print(temp['original_name'])
-                continue
-            temp['face'] = temp['face_list'][0]
-            temp['original_path'] = os.path.join(self.path, temp['original_name'])
-            self.faceSelected = temp['face']
-            self.bookList.append(temp)
-        self.newBook = self.bookList[0]
-        self.initUI()
+        if address is not None:
+            for i in filelist:
+                temp = pf.bookNameCut(i)
+                temp['face_list'] = os.listdir(os.path.join(address, i))[:6]
+                temp['face_list'] = list(filter(isPic, temp['face_list']))[:3]
+                if len(temp['face_list']) < 3:
+                    print(temp['original_name'])
+                    continue
+                temp['face'] = temp['face_list'][0]
+                temp['original_path'] = os.path.join(self.path, temp['original_name'])
+                temp['drop'] = False
+                self.bookList.append(temp)
+        else:
+            self.bookList = filelist
+            for i in self.bookList:
+                i['face_list'] = os.listdir(i['address'])
+                i['face_list'] = list(filter(isPic, i['face_list']))[:3]
+                i['original_path'] = i['address']
+                i['drop'] = False
+        if len(self.bookList) != 0:
+            self.newBook = self.bookList[0]
+            self.initUI()
+        else:
+            self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + "没有找到合法的书籍。")
+            self.close()
 
     def initUI(self):
         self.setGeometry(600, 200, 1000, 500)
@@ -122,11 +136,12 @@ class SetMultiMessage(QWidget):
 
         self.favourite = QCheckBox("喜欢")
         self.unread = QCheckBox('未看')
+        self.drop = QCheckBox('丢弃')
         gLayOut.addWidget(self.favourite, 6, 1)
         gLayOut.addWidget(self.unread, 6, 2)
+        gLayOut.addWidget(self.drop, 6, 3)
 
         self.pics = QGroupBox()
-        # pics.setObjectName()
         self.pics.setTitle('选择封面')
         self.pic_layout = QHBoxLayout(self.pics)
 
@@ -162,9 +177,10 @@ class SetMultiMessage(QWidget):
         self.newBook['favourite'] = int(self.favourite.isChecked())
         self.newBook['unread'] = int(self.unread.isChecked())
         self.newBook['face'] = self.faceSelected
+        self.newBook['drop'] = int(self.drop.isChecked())
         image = QImage()
-        image.load(os.path.join(self.path, self.newBook['face']))
-        image.save(os.path.join(self.path, self.newBook['face']))
+        image.load(os.path.join(self.newBook['original_path'], self.newBook['face']))
+        image.save(os.path.join(self.newBook['original_path'], self.newBook['face']))
 
     def setInformation(self):
         self.bookNameInput.setText(self.newBook['book_name'])
@@ -175,12 +191,16 @@ class SetMultiMessage(QWidget):
         self.classifyInput.setText(self.newBook['classify'])
         self.favourite.setChecked(bool(self.newBook['favourite']))
         self.unread.setChecked(bool(self.newBook['unread']))
+        self.drop.setChecked(bool(self.newBook['drop']))
         self.face0.setIcon(
-            QIcon(os.path.join(self.path, self.newBook['original_name'], self.newBook['face_list'][0])))
+            QIcon(os.path.join(self.newBook['original_path'], self.newBook['face_list'][0])))
+        self.face0.setMaximumWidth(100)
         self.face1.setIcon(
-            QIcon(os.path.join(self.path, self.newBook['original_name'], self.newBook['face_list'][1])))
+            QIcon(os.path.join(self.newBook['original_path'], self.newBook['face_list'][1])))
+        self.face1.setMaximumWidth(100)
         self.face2.setIcon(
-            QIcon(os.path.join(self.path, self.newBook['original_name'], self.newBook['face_list'][2])))
+            QIcon(os.path.join(self.newBook['original_path'], self.newBook['face_list'][2])))
+        self.face2.setMaximumWidth(100)
         self.face0.setDown(False)
         self.face1.setDown(False)
         self.face2.setDown(False)
@@ -222,34 +242,38 @@ class SetMultiMessage(QWidget):
                 self.newBook = i
                 self.setInformation()
                 break
-        # print(self.newBook)
 
     # 关闭窗口，传回包含书本信息的list
     def finish(self):
         self.confirm()
-        for i in range(len(self.bookList)):
+        result = []
+        for i in self.bookList:
+            if i['drop']:
+                continue
             # 设置全局喜欢，未读，分类
             if self.publicFavourite.isChecked():
-                self.bookList[i]['favourite'] = 1
+                i['favourite'] = 1
             if self.publicUnread.isChecked():
-                self.bookList[i]['unread'] = 1
+                i['unread'] = 1
+            # 添加公共分类
+            if len(self.publicClassifyInput.text()) != 0:
+                if len(i['classify']) != 0:
+                    i['classify'] += ' '
+                i['classify'] += self.publicClassifyInput.text()
+            # 设置公共作者
             if len(self.publicAuthorInput.text()) != 0:
-                if len(self.bookList[i]['classify']) != 0:
-                    self.bookList[i]['classify'] += ' '
-                self.bookList[i]['classify'] += self.publicClassifyInput.text()
-            if len(self.publicAuthorInput.text()) != 0:
-                self.bookList[i]['author'] = self.publicAuthorInput.text()
+                i['author'] = self.publicAuthorInput.text()
             # 生成最终决定的书名和地址
-            self.bookList[i]['new_name'] = '[' + self.bookList[i]['author'] + ']' + self.bookList[i]['book_name'] + '[' + self.bookList[i]['chinesization'] + ']'
-            if self.bookList[i]['Cxx'] != 'C00':
-                self.bookList[i]['new_name'] += ('(' + self.bookList[i]['Cxx'] + ')')
-            self.bookList[i]['address'] = os.path.join(
-                './books', self.bookList[i]['author'], self.bookList[i]['new_name'])
-
+            i['new_name'] = '[' + i['author'] + ']' + i['book_name'] + '[' + i['chinesization'] + ']'
+            if i['Cxx'] != 'C00':
+                i['new_name'] += ('(' + i['Cxx'] + ')')
+            i['address'] = os.path.join(
+                './books', i['author'], i['new_name'])
+            result.append(i)
         self.close()
-        self.after_close_signal.emit(self.bookList)
+        self.after_close_signal.emit(result)
 
 
 def isPic(name: str):
     ext = os.path.splitext(name)[1]
-    return ext == '.jpg' or ext == '.png'
+    return ext == '.jpg' or ext == '.png' or ext == '.jpeg'

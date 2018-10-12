@@ -9,6 +9,8 @@ if __name__ == '__main__':
         os.mkdir('data')
         with open('./data/path.json', 'w') as p:
             p.write('./')
+    if 'books' not in os.listdir('./'):
+        os.mkdir('books')
     # 检查数据库
     conn = sqlite3.connect('./data/data.db')
     cursor = conn.cursor()
@@ -32,12 +34,12 @@ if __name__ == '__main__':
                 )''')
     if not ('classify',) in tables:
         cursor.execute('''create table classify(
-            name text primary key,
-            book_list text
+            name text primary key
         )''')
     cursor.close()
     conn.commit()
     conn.close()
+    
     app = QApplication(sys.argv)
     ex = main_widget.MainWidget()
     sys.exit(app.exec_())

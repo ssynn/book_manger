@@ -7,7 +7,6 @@ from PyQt5.QtWidgets import (QWidget, QDesktopWidget, QMainWindow, QAction,
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import Qt
 from model import public_function as pf
-from model import flowlayout as fl
 from model import set_book_dialog as st
 from model import book_model as bm
 from model import tree_view as tv
@@ -241,12 +240,13 @@ class MainWidget(QMainWindow):
 
         # 上方组件
         # 设置为图片浏览, 不知道什么时候会做这个功能
-        if self.list_view:
-            flowLayout = fl.FlowLayout()
-            for i in self.books:
-                flowLayout.addWidget(makeBookView(i))
-            booksView = QWidget()
-            booksView.setLayout(flowLayout)
+        if False:
+            pass
+            # flowLayout = fl.FlowLayout()
+            # for i in self.books:
+            #     flowLayout.addWidget(makeBookView(i))
+            # booksView = QWidget()
+            # booksView.setLayout(flowLayout)
         # 文字详情浏览
         else:
             booksView = QSplitter()

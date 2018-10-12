@@ -1,45 +1,60 @@
 # 这是一个书籍管理系统
 
-## 1、功能
+## 功能
 
-* 快速查找书籍（名称，作者，分类）
-
-<!-- * 文件夹式的界面（列表式，图标式） -->
-
-* 文件的排序功能（根据时间，根据名称）
+* 查找书籍（名称，作者，分类）
+* 文件的排序功能
 * 添加新书籍的功能（填入作者、名字、系列、Cxx、分类、封面，是否喜欢, 汉化者）
 * 修改书籍的属性（同上）
 * 分类的添加和删除和修改
 * 喜欢的书籍
 * 未看的书籍
 
-****
+## 使用注意
 
-## 2、设计
+* ！！重要！！千万不要手动修改books文件夹内的任何内容，否则会引起不可预料的错误
 
-## Book表
+* 点击书目时右侧会有预览，但是一些图片由于质量太高所以加载时会很慢所以为了提高预览速度软件会自动生成一个小质量的预览图（宽度400）,而原来那张高质量的图片放在文件夹最后名字为：备份XXX.jpg
+
+* 在添加新书时点击会有延迟：图片加载的锅
+
+* 添加新书时会产生密集的文件转移，所以在添加新书期间不要做文件操作，估计大家的龟速机械马上就爆炸了
+
+* 这只是一个管理软件，由于生命有限我暂时不会加入本子浏览器，浏览就交给文件管理器了
+
+* 不是很（懒得）理解QTreeView和QStandardItemModel的运作原理，依葫芦画瓢搞出了列表界面
+
+* 这个东西是我一边学Python一边学PyQt一边写的，所以质量什么的。。。。
+
+* classify表内意义不明的book_list是早期设计的残留，不知道以后会不会有用
+
+* 自动分割书名只是给用户减少一些操作，不能完全依赖
+
+## 设计
+
+### Book表
 
 <pre>
-cursor.execute('''create table books (
-                address text primary key,
-                face text,
-                classify text,
-                book_name text,
-                Cxx varchar(10),
-                chinesization text,
-                author text,
-                favourite int,
-                date text,
-                unread int,
-                original_name text,
-                new_name text,
-                )''')
+('''create table books (
+    address text primary key,
+    face text,
+    classify text,
+    book_name text,
+    Cxx varchar(10),
+    chinesization text,
+    author text,
+    favourite int,
+    date text,
+    unread int,
+    original_name text,
+    new_name text,
+)''')
 </pre>
 
-### Classify表
+## Classify表
 
 <pre>
-cursor.execute('''create table classify(
+('''create table classify(
     name text primary key,
     book_list text
 )''')
@@ -92,7 +107,7 @@ cursor.execute('''create table classify(
 * 2018-10-07
   * 创建预览图以提升体验
   * 小修小补
-  * 拖拽添加
+  * 拖拽添加（感觉有了灵魂）
 
 <!-- 
 ### 加载

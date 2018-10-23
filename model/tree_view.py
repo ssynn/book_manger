@@ -4,8 +4,6 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from model import public_function as pf
 
-ILLIGAL = ['未看', '夏欢', '未分类', '分类', '所有']
-
 
 class MyTreeView(QTreeWidget):
     def __init__(self, master):

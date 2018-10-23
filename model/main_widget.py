@@ -29,7 +29,7 @@ class MainWidget(QMainWindow):
         # 设置菜单
         self.setMenu()
 
-        # 设置右边内容
+        # 设置主要内容
         self.setCenter()
 
         # 设置样式
@@ -68,6 +68,7 @@ class MainWidget(QMainWindow):
         addBookItem.triggered.connect(self.addOneNewBookDialog)
         return addBookItem
 
+    # 批量添加菜单
     def addNewBooks(self):
         item = QAction("批量添加", self)
         item.setShortcut('Ctrl+M')
@@ -190,8 +191,8 @@ class MainWidget(QMainWindow):
 
     # 批量修改信息方法
     def modifyMultiBooksDialog(self):
-        self.modifiBooks = sts.SetMultiMessage(self.books)
-        self.modifiBooks.after_close_signal.connect(self.modifyMultiBooksFunction)
+        self.modifyBooks = sts.SetMultiMessage(self.books)
+        self.modifyBooks.after_close_signal.connect(self.modifyMultiBooksFunction)
 
     # 批量修改信息方法线程
     def modifyMultiBooksFunction(self, bookList):
@@ -211,7 +212,6 @@ class MainWidget(QMainWindow):
     # 主页面初始化
     def setMainWindow(self):
         # 设置位置和大小
-        # self.setGeometry(300, 600, 300, 300)
         self.setWindowIcon(QIcon('pic/tx.jpg'))
         self.resize(1280, 800)
         self.center()
@@ -373,9 +373,9 @@ class MainWidget(QMainWindow):
 
 def makeBookView(book: dict):
     view = QWidget()
-    imgeLabel = QLabel()
+    imageLabel = QLabel()
     pixMap = QPixmap(os.path.join(book['address'], book['face']))
-    imgeLabel.setPixmap(pixMap.scaled(120, 170))
+    imageLabel.setPixmap(pixMap.scaled(120, 170))
 
     text = QLabel()
     name = book['book_name']
@@ -384,7 +384,7 @@ def makeBookView(book: dict):
     text.setText(name)
     text.setAlignment(Qt.AlignCenter)
     vLayout = QVBoxLayout()
-    vLayout.addWidget(imgeLabel)
+    vLayout.addWidget(imageLabel)
     vLayout.addWidget(text)
     view.setLayout(vLayout)
     view.resize(150, 150)

@@ -98,7 +98,6 @@ class SetBookMessage(QWidget):
         gLayOut.addWidget(cancel, 10, 3)
 
         pics = QGroupBox()
-        # pics.setObjectName()
         pics.setTitle('选择封面')
         self.pic_layout = QHBoxLayout(pics)
 

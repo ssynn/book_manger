@@ -39,7 +39,7 @@ if __name__ == '__main__':
     cursor.close()
     conn.commit()
     conn.close()
-    
+
     app = QApplication(sys.argv)
     ex = main_widget.MainWidget()
     sys.exit(app.exec_())

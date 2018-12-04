@@ -5,5 +5,7 @@ sqlite_operation.py
 test.py
 experiment.py
 data.db
+path.txt
 thread.py
 drag.py
+*.pyc

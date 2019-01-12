@@ -22,6 +22,7 @@ class BookModel(QTreeView):
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.doubleClicked.connect(self.doubleClickedFunction)
         self.clicked.connect(self.clickedFunction)
+        self.setMyStyle()
 
     # 建立模型
     def createBookModel(self):
@@ -174,7 +175,7 @@ class BookModel(QTreeView):
     def modifyFunction(self):
         for i in self.book_:
             if i['address'] == self.selectedIndexes()[4].data():
-                self.addWindow = st.SetBookMessage(i)
+                self.addWindow = st.SetBookMessage(i, self.master)
                 self.addWindow.show()
                 self.addWindow.after_close_signal.connect(self.modifyFunctionBase)
 
@@ -197,3 +198,20 @@ class BookModel(QTreeView):
     def openFileInExplorer(self):
         os.system('explorer.exe %s' % os.path.abspath(
             self.selectedIndexes()[4].data()))
+
+    def setMyStyle(self):
+        self.verticalScrollBar().setStyleSheet('''
+            QScrollBar{background:transparent; width: 10px;}
+            QScrollBar::handle{background:lightgray; border:2px solid transparent; border-radius:5px;}
+            QScrollBar::handle:hover{background:gray;}
+            QScrollBar::sub-line{background:transparent;}
+            QScrollBar::add-line{background:transparent;}
+        ''')
+
+        self.horizontalScrollBar().setStyleSheet('''
+            QScrollBar{background:transparent; height: 10px;}
+            QScrollBar::handle{background:lightgray; border:2px solid transparent; border-radius:5px;}
+            QScrollBar::handle:hover{background:gray;}
+            QScrollBar::sub-line{background:transparent;}
+            QScrollBar::add-line{background:transparent;}
+        ''')

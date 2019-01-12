@@ -124,9 +124,8 @@ class MainWidget(QMainWindow):
             with open('./data/path.txt', 'w', encoding="UTF-8") as p:
                 p.write(path)
 
-            self.addWindow = st.SetBookMessage(dirName)
+            self.addWindow = st.SetBookMessage(dirName, self)
             self.addWindow.after_close_signal.connect(self.addOneNewBookFunction)
-            self.addWindow.stateChange.connect(self.textOut.append)
         else:
             print('error!')
 
@@ -151,7 +150,7 @@ class MainWidget(QMainWindow):
             filelist = addressList
         # print(filelist)
         # 传入父文件夹地址和文件夹内的子文件夹名
-        self.addBooksWindow = sts.SetMultiMessage(filelist=filelist, address=True)
+        self.addBooksWindow = sts.SetMultiMessage(filelist, self, address=True)
         self.addBooksWindow.stateChange.connect(self.textOut.append)
         self.addBooksWindow.after_close_signal.connect(self.addNewBooksFunction)
 
@@ -191,7 +190,7 @@ class MainWidget(QMainWindow):
 
     # 批量修改信息方法
     def modifyMultiBooksDialog(self):
-        self.modifyBooks = sts.SetMultiMessage(self.books)
+        self.modifyBooks = sts.SetMultiMessage(self.books, self)
         self.modifyBooks.after_close_signal.connect(self.modifyMultiBooksFunction)
 
     # 批量修改信息方法线程

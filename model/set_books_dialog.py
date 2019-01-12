@@ -1,9 +1,10 @@
 import os
 import time
-from PyQt5.QtWidgets import (QWidget, QGridLayout, QTreeView,
-                             QLabel, QLineEdit, QTextEdit, QPushButton,
-                             QCheckBox, QHBoxLayout, QGroupBox, QToolButton)
-from PyQt5.QtGui import QStandardItemModel, QIcon, QImage
+from PyQt5.QtWidgets import (QWidget, QGridLayout, QTreeView, QTableWidget,
+                             QLabel, QLineEdit, QTableWidgetItem, QGroupBox,
+                             QCheckBox, QHBoxLayout, QVBoxLayout, QToolButton,
+                             QAbstractItemView)
+from PyQt5.QtGui import QIcon, QImage
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from model import public_function as pf
 
@@ -14,10 +15,12 @@ class SetMultiMessage(QWidget):
     after_close_signal = pyqtSignal(list)
 
     # address 为 True说明传入的是地址否则为书籍信息
-    def __init__(self, filelist: list, address=False, master=None):
+    def __init__(self, filelist: list, master, address=False):
         super().__init__()
-        # 书名分割
+
         self.bookList = []
+
+        # 传入的是地址
         if address:
             for i in filelist:
                 dirName = os.path.split(i)[1]
@@ -31,6 +34,7 @@ class SetMultiMessage(QWidget):
                 temp['original_path'] = i
                 temp['drop'] = False
                 self.bookList.append(temp)
+        # 传入的是直接信息
         else:
             self.bookList = filelist
             for i in self.bookList:
@@ -38,22 +42,24 @@ class SetMultiMessage(QWidget):
                 i['face_list'] = list(filter(isPic, i['face_list']))[:3]
                 i['original_path'] = i['address']
                 i['drop'] = False
+
         if len(self.bookList) != 0:
             self.newBook = self.bookList[0]
             self.initUI()
         else:
-            self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + "没有找到合法的书籍。")
-            self.close()
+            master.textOut.append(time.strftime(
+                "%Y-%m-%d %H:%M") + "没有找到合法的书籍。")
+            return
 
     def initUI(self):
         self.setGeometry(600, 200, 1000, 500)
+        self.setFixedSize(1000, 500)
         self.body = QGridLayout(self)
         self.setWindowTitle("批量添加")
         self.setWindowIcon(QIcon('pic/tx.jpg'))
+
         # 列表视图
-        self.left = QTreeView()
-        self.left.setModel(self.createBookModel())
-        self.left.clicked.connect(self.clickFunction)
+        self.left = self.createBookModel()
         self.body.addWidget(self.left, 0, 0, 5, 5)
 
         # 详情视图
@@ -65,6 +71,7 @@ class SetMultiMessage(QWidget):
         self.publicAuthorInput = QLineEdit(self)
         publicCliassify = QLabel("公有分类")
         self.publicClassifyInput = QLineEdit(self)
+
         self.body.addWidget(publicAuthorLabel, 5, 0)
         self.body.addWidget(self.publicAuthorInput, 5, 1, 1, 4)
         self.body.addWidget(publicCliassify, 6, 0)
@@ -74,77 +81,122 @@ class SetMultiMessage(QWidget):
         self.body.addWidget(self.publicFavourite, 7, 1)
         self.body.addWidget(self.publicUnread, 7, 2)
 
-        # 信息视图
-        done = QPushButton('确认')
-        done.clicked.connect(self.finish)
-        cancel = QPushButton('取消')
-        cancel.clicked.connect(self.close)
-        self.body.addWidget(done, 10, 9)
-        self.body.addWidget(cancel, 10, 10)
+        # 结束操作
+        self.done = QToolButton()
+        self.done.setText('确认')
+        self.done.clicked.connect(self.finish)
+        self.done.setFixedSize(100, 30)
+
+        self.cancel = QToolButton()
+        self.cancel.setText('取消')
+        self.cancel.clicked.connect(self.close)
+        self.cancel.setFixedSize(100, 30)
+
+        self.body.addWidget(self.done, 10, 9)
+        self.body.addWidget(self.cancel, 10, 10)
         self.setInformation()
+        self.setMyStyle()
         self.show()
 
     def createBookModel(self):
-        model = QStandardItemModel(0, 1, self)
-        model.setHeaderData(0, Qt.Horizontal, '书名')
-        for i in self.bookList:
-            self.addBook(model, i['original_name'])
-        return model
+        table = QTableWidget(0, 1)
+        table.setFixedWidth(470)
+        table.verticalHeader().setVisible(False)
+        table.horizontalHeader().setVisible(False)
+        table.setAlternatingRowColors(True)
+        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        table.itemClicked.connect(self.clickFunction)
+        table.setColumnWidth(0, 470)
 
-    def addBook(self, model, name):
-        model.insertRow(0)
-        model.setData(model.index(0, 0), name)
+        for i in self.bookList:
+            temp = QTableWidgetItem(i['original_name'])
+            temp.info = i
+            table.insertRow(0)
+            table.setItem(0, 0, temp)
+
+        table.verticalScrollBar().setStyleSheet('''
+            QScrollBar{background:transparent; width: 10px;}
+            QScrollBar::handle{background:lightgray; border:2px solid transparent; border-radius:5px;}
+            QScrollBar::handle:hover{background:gray;}
+            QScrollBar::sub-line{background:transparent;}
+            QScrollBar::add-line{background:transparent;}
+        ''')
+        return table
 
     # 右侧设置详细信息部分
     def createMessageBox(self):
-        gLayOut = QGridLayout()
+        # 标题列
         bookNameLabel = QLabel('书名')
-        # bookNameLabel.setAlignment(Qt.AlignBottom)
-        self.bookNameInput = QLineEdit(self)
-
+        bookNameLabel.setAlignment(Qt.AlignRight)
         authorLabel = QLabel("作者")
-        # authorLabel.setAlignment(Qt.AlignBottom)
-        self.authorInput = QLineEdit(self)
-
+        authorLabel.setAlignment(Qt.AlignRight)
         chinesizationLabel = QLabel('汉化')
-        # chinesizationLabel.setAlignment(Qt.AlignBottom)
-        self.chinesizationInput = QLineEdit(self)
-
+        chinesizationLabel.setAlignment(Qt.AlignRight)
         comicMarketLabel = QLabel("Comic Market")
-        # comicMarketLabel.setAlignment(Qt.AlignBottom)
-        self.comicMarketInput = QLineEdit(self)
-
+        comicMarketLabel.setAlignment(Qt.AlignRight)
         classifyLabel = QLabel('分类')
-        # classifyLabel.setAlignment(Qt.AlignBottom)
-        self.classifyInput = QLineEdit(self)
-
+        classifyLabel.setAlignment(Qt.AlignRight)
         originalLabel = QLabel("源文件名")
-        # originalLabel.setAlignment(Qt.AlignCenter)
-        self.originalInput = QTextEdit(self)
+        originalLabel.setAlignment(Qt.AlignRight)
 
-        gLayOut.addWidget(bookNameLabel, 0, 0)
-        gLayOut.addWidget(self.bookNameInput, 0, 1, 1, 3)
-        gLayOut.addWidget(authorLabel, 1, 0)
-        gLayOut.addWidget(self.authorInput, 1, 1, 1, 3)
-        gLayOut.addWidget(chinesizationLabel, 2, 0)
-        gLayOut.addWidget(self.chinesizationInput, 2, 1, 1, 3)
-        gLayOut.addWidget(comicMarketLabel, 3, 0)
-        gLayOut.addWidget(self.comicMarketInput, 3, 1, 1, 3)
-        gLayOut.addWidget(originalLabel, 4, 0)
-        gLayOut.addWidget(self.originalInput, 4, 1, 1, 3)
-        gLayOut.addWidget(classifyLabel, 5, 0)
-        gLayOut.addWidget(self.classifyInput, 5, 1, 1, 3)
+        labelList = QVBoxLayout()
+        labelList.addWidget(bookNameLabel)
+        labelList.addWidget(authorLabel)
+        labelList.addWidget(chinesizationLabel)
+        labelList.addWidget(comicMarketLabel)
+        labelList.addWidget(classifyLabel)
+        labelList.addWidget(originalLabel)
 
-        self.favourite = QCheckBox("喜欢")
-        self.unread = QCheckBox('未看')
-        self.drop = QCheckBox('丢弃')
-        gLayOut.addWidget(self.favourite, 6, 1)
-        gLayOut.addWidget(self.unread, 6, 2)
-        gLayOut.addWidget(self.drop, 6, 3)
+        # 输入列
+        self.bookNameInput = QLineEdit(self)
+        self.bookNameInput.setText(self.newBook['book_name'])
 
-        self.pics = QGroupBox()
-        self.pics.setTitle('选择封面')
-        self.pic_layout = QHBoxLayout(self.pics)
+        self.authorInput = QLineEdit(self)
+        self.authorInput.setText(self.newBook['author'])
+
+        self.chinesizationInput = QLineEdit(self)
+        self.chinesizationInput.setText(self.newBook['chinesization'])
+
+        self.comicMarketInput = QLineEdit(self)
+        self.comicMarketInput.setText(self.newBook['Cxx'])
+
+        self.classifyInput = QLineEdit(self)
+        self.classifyInput.setText(self.newBook['classify'])
+
+        self.originalInput = QLineEdit(self)
+        self.originalInput.setText(self.newBook['original_name'])
+
+        inputList = QVBoxLayout()
+        inputList.addWidget(self.bookNameInput)
+        inputList.addWidget(self.authorInput)
+        inputList.addWidget(self.chinesizationInput)
+        inputList.addWidget(self.comicMarketInput)
+        inputList.addWidget(self.classifyInput)
+        inputList.addWidget(self.originalInput)
+
+        # 把上面两列装入一行
+        infoLine = QHBoxLayout()
+        infoLine.addLayout(labelList)
+        infoLine.addLayout(inputList)
+
+        # 选择框
+        self.favourite = QCheckBox("喜欢", self)
+        self.favourite.setFixedWidth(80)
+        self.unread = QCheckBox('未看', self)
+        self.unread.setFixedWidth(80)
+        self.drop = QCheckBox('丢弃', self)
+        self.drop.setFixedWidth(80)
+
+        checkBoxes = QHBoxLayout()
+        checkBoxes.addWidget(self.favourite)
+        checkBoxes.addWidget(self.unread)
+        checkBoxes.addWidget(self.drop)
+
+        # 选择封面
+        pics = QGroupBox()
+        pics.setTitle('选择封面')
+        pics.setMinimumHeight(180)
+        self.pic_layout = QHBoxLayout(pics)
 
         self.face0 = QToolButton()
         self.face0.setIconSize(QSize(100, 100))
@@ -164,8 +216,14 @@ class SetMultiMessage(QWidget):
         self.face2.clicked.connect(self.selectFace2Function)
         self.pic_layout.addWidget(self.face2)
 
-        gLayOut.addWidget(self.pics, 7, 0, 5, 4)
-        return gLayOut
+        self.facesBtn = [self.face0, self.face1, self.face2]
+        self.selectFace0Function()
+
+        body = QVBoxLayout()
+        body.addLayout(infoLine)
+        body.addLayout(checkBoxes)
+        body.addWidget(pics)
+        return body
 
     # 把右侧更改后的信息保存到newBook
     def confirm(self):
@@ -180,8 +238,10 @@ class SetMultiMessage(QWidget):
         self.newBook['face'] = self.faceSelected
         self.newBook['drop'] = int(self.drop.isChecked())
         image = QImage()
-        image.load(os.path.join(self.newBook['original_path'], self.newBook['face']))
-        image.save(os.path.join(self.newBook['original_path'], self.newBook['face']))
+        image.load(os.path.join(
+            self.newBook['original_path'], self.newBook['face']))
+        image.save(os.path.join(
+            self.newBook['original_path'], self.newBook['face']))
 
     def setInformation(self):
         self.bookNameInput.setText(self.newBook['book_name'])
@@ -193,86 +253,181 @@ class SetMultiMessage(QWidget):
         self.favourite.setChecked(bool(self.newBook['favourite']))
         self.unread.setChecked(bool(self.newBook['unread']))
         self.drop.setChecked(bool(self.newBook['drop']))
-        self.face0.setIcon(
-            QIcon(os.path.join(self.newBook['original_path'], self.newBook['face_list'][0])))
-        self.face0.setMaximumWidth(100)
-        self.face1.setIcon(
-            QIcon(os.path.join(self.newBook['original_path'], self.newBook['face_list'][1])))
-        self.face1.setMaximumWidth(100)
-        self.face2.setIcon(
-            QIcon(os.path.join(self.newBook['original_path'], self.newBook['face_list'][2])))
-        self.face2.setMaximumWidth(100)
-        self.face0.setDown(False)
-        self.face1.setDown(False)
-        self.face2.setDown(False)
+        if 'icon_list' not in self.newBook:
+            self.newBook['icon_list'] = [
+                QIcon(os.path.join(self.newBook['original_path'], self.newBook['face_list'][0])),
+                QIcon(os.path.join(self.newBook['original_path'], self.newBook['face_list'][1])),
+                QIcon(os.path.join(self.newBook['original_path'], self.newBook['face_list'][2]))
+            ]
+        self.face0.setIcon(self.newBook['icon_list'][0])
+        self.face0.setMaximumWidth(110)
+        self.face1.setIcon(self.newBook['icon_list'][0])
+        self.face1.setMaximumWidth(110)
+        self.face2.setIcon(self.newBook['icon_list'][2])
+        self.face2.setMaximumWidth(110)
+
+        self.refresh()
         self.faceSelected = self.newBook['face']
         self.face0.setText(self.newBook['face_list'][0])
         self.face1.setText(self.newBook['face_list'][1])
         self.face2.setText(self.newBook['face_list'][2])
         if self.face0.text() == self.newBook['face']:
-            self.face0.setDown(True)
+            self.selectFace0Function()
         if self.face1.text() == self.newBook['face']:
-            self.face1.setDown(True)
+            self.selectFace1Function()
         if self.face2.text() == self.newBook['face']:
-            self.face2.setDown(True)
+            self.selectFace2Function()
 
     # 选择封面
     def selectFace0Function(self):
-        self.face0.setDown(True)
-        self.face1.setDown(False)
-        self.face2.setDown(False)
         self.faceSelected = self.newBook['face_list'][0]
+        self.refresh()
+        self.face0.setStyleSheet('''
+            QToolButton{
+                background-color:#e5f3ff;
+                border: 1px solid #99d1ff;
+            }
+            QToolButton:hover{
+                background-color: #e5f3ff;
+            }
+        ''')
 
     def selectFace1Function(self):
-        self.face0.setDown(False)
-        self.face1.setDown(True)
-        self.face2.setDown(False)
         self.faceSelected = self.newBook['face_list'][1]
+        self.refresh()
+        self.face1.setStyleSheet('''
+            QToolButton{
+                background-color:#e5f3ff;
+                border: 1px solid #99d1ff;
+            }
+            QToolButton:hover{
+                background-color: #e5f3ff;
+            }
+        ''')
 
     def selectFace2Function(self):
-        self.face0.setDown(False)
-        self.face1.setDown(False)
-        self.face2.setDown(True)
         self.faceSelected = self.newBook['face_list'][2]
+        self.refresh()
+        self.face2.setStyleSheet('''
+            QToolButton{
+                background-color:#e5f3ff;
+                border: 1px solid #99d1ff;
+            }
+            QToolButton:hover{
+                background-color: #e5f3ff;
+            }
+        ''')
+
+    def refresh(self):
+        for i in self.facesBtn:
+            i.setStyleSheet('''
+                QToolButton{
+                    background-color:white;
+                    border: 1px solid white;
+                }
+                QToolButton:hover{
+                    background-color: #e5f3ff;
+                }
+            ''')
 
     # 选择书籍
     def clickFunction(self):
         self.confirm()
-        for i in self.bookList:
-            if i['original_name'] == self.left.selectedIndexes()[0].data():
-                self.newBook = i
-                self.setInformation()
-                break
+        self.newBook = self.left.selectedItems()[0].info
+        self.setInformation()
 
     # 关闭窗口，传回包含书本信息的list
     def finish(self):
         self.confirm()
         result = []
+
         for i in self.bookList:
             if i['drop']:
                 continue
+
             # 设置全局喜欢，未读，分类
             if self.publicFavourite.isChecked():
                 i['favourite'] = 1
             if self.publicUnread.isChecked():
                 i['unread'] = 1
+
             # 添加公共分类
             if len(self.publicClassifyInput.text()) != 0:
                 if len(i['classify']) != 0:
                     i['classify'] += ' '
                 i['classify'] += self.publicClassifyInput.text()
+
             # 设置公共作者
             if len(self.publicAuthorInput.text()) != 0:
                 i['author'] = self.publicAuthorInput.text()
+
             # 生成最终决定的书名和地址
-            i['new_name'] = '[' + i['author'] + ']' + i['book_name'] + '[' + i['chinesization'] + ']'
+            self.newBook['new_name'] = f"[{self.newBook['author']}]{self.newBook['book_name']}[{self.newBook['chinesization']}]"
+
             if i['Cxx'] != 'C00':
                 i['new_name'] += ('(' + i['Cxx'] + ')')
+
             i['address'] = os.path.join(
-                './books', i['author'], i['new_name'])
+                './books',
+                i['author'],
+                i['new_name']
+            )
             result.append(i)
         self.close()
         self.after_close_signal.emit(result)
+
+    def setMyStyle(self):
+        self.setStyleSheet('''
+            QWidget{
+                background-color: white;
+            }
+            QToolButton{
+                font-family: 微软雅黑;
+                font-size: 15px;
+                border-radius: 5px;
+            }
+            QGroupBox{
+                border-radius: 10px;
+                border: 1px solid #BDBDBD;
+            }
+            QLineEdit{
+                border: 1px solid #BDBDBD;
+                border-radius: 5px;
+                font-family: 微软雅黑;
+                font-size: 18px;
+                color: #6d6d6d;
+            }
+            QLabel{
+                font-family: 微软雅黑;
+                font-size: 18px;
+            }
+            QTableWidget{
+                border-radius: 3px;
+                border: 1px solid #BDBDBD;
+            }
+        ''')
+        self.done.setStyleSheet('''
+            QToolButton{
+                color: #448AFF;
+                border: 1px solid #448AFF;
+            }
+            QToolButton:hover{
+                background: #448AFF;
+                color: white;
+            }
+        ''')
+
+        self.cancel.setStyleSheet('''
+            QToolButton{
+                color: #D32F2F;
+                border: 1px solid #D32F2F;
+                margin-right: 5px;
+            }
+            QToolButton:hover{
+                background: #D32F2F;
+                color: white;
+            }
+        ''')
 
 
 def isPic(name: str):

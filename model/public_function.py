@@ -240,6 +240,7 @@ class ModifyMultiBookInfo(QThread):
 
 # 只是提出参考
 def book_name_cut(name: str):
+    book_name = []
     newBook = {
         "face": "",                             # 不预设
         "classify": "",                         # 不预设
@@ -254,28 +255,39 @@ def book_name_cut(name: str):
         "original_name": name,                  # 预设
         "new_name": ""                          # 不预设
     }
-    name.replace('[S版]', '')
+
+    # 找出COMIC_MARKET号
     comic_market = re.search(r"C\d{2,3}", name, re.I)
     name = re.sub(r"\(C\d{2,3}\)", '', name)
     if comic_market:
         comic_market = comic_market.group()
         newBook['Cxx'] = comic_market
-    # 匹配作者和汉化组
+
+    # 规范括号
     name = name.replace('【', '[')
     name = name.replace('】', ']')
+
+    # 4k[s版]扫图组 需要单独判断
+    if name.find('[4K[S版]掃圖組]') != -1:
+        book_name = ['[4K[S版]掃圖組]']
+        name = name.replace('[4K[S版]掃圖組]', '')
+
     # 用于判断是否为汉化组
     chss = ch.all_name
     part = ch.part
     chss = set(chss)
-    book_name = re.findall(r'\[[^\[\]]*\]', name)
+    book_name += re.findall(r'\[[^\[\]]*\]', name)
     name = re.sub(r'\[[^\[\]]*\]', '', name)
+
     is_find = False
+
     # 汉化组的匹配规则
     # 首先在完整的汉化组名字集合里找如果没有，就找可能是汉化组的字段
     for i in book_name:
-        if i in chss:
+        temp = i[1:-1]
+        if temp in chss:
             is_find = True
-            newBook['chinesization'] = i[1:-1]
+            newBook['chinesization'] = temp
             book_name.remove(i)
             break
     if not is_find:
@@ -287,8 +299,16 @@ def book_name_cut(name: str):
                     newBook['chinesization'] = j[1:-1]
                     book_name.remove(j)
                     break
+
+    # 默认book_name的第一个为作者名
     if book_name:
         newBook['author'] = book_name[0][1:-1]
+        book_name = book_name[1:]
+
+    # 将余下的方括号加入书本名
+    for item in book_name:
+        name += item
+
     newBook['book_name'] = name.replace(' ', '')
     return newBook
 
@@ -435,7 +455,7 @@ def addBookClassify(book_address: str, out_box, classify_name=None):
             classify_list = classify_list[1: -1].replace('\'', '')
             cursor.execute("update books set classify=? where address=?", [classify_list.replace(',', ''), book_address])
         res = True
-    except Exception as e:
+    except Exception:
         res = False
         out_box.append(time.strftime("%Y-%m-%d %H:%M") + '添加失败。')
         print('添加时出现错误!')
@@ -458,7 +478,7 @@ def deleteBook(book_address: str, out_box):
             shutil.rmtree(book_address)
         cursor.execute("delete from books where address=?", [book_address])
         res = True
-    except Exception as e:
+    except Exception:
         res = False
         out_box.append(time.strftime("%Y-%m-%d %H:%M") + '删除失败。')
         print('删除时出现错误!')

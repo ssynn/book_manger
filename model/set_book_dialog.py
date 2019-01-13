@@ -105,6 +105,8 @@ class SetBookMessage(QWidget):
         self.favourite.setFixedWidth(80)
         self.unread = QCheckBox('未看', self)
         self.unread.setFixedWidth(80)
+        self.favourite.setChecked(bool(self.newBook['favourite']))
+        self.unread.setChecked(bool(self.newBook['unread']))
 
         checkBoxes = QHBoxLayout()
         checkBoxes.addWidget(self.favourite)
@@ -146,8 +148,12 @@ class SetBookMessage(QWidget):
         self.facesBtn = [self.face0, self.face1, self.face2]
         self.selectFace0Function()
 
-        # faceLine = QHBoxLayout()
-        # faceLine.addWidget(pics)
+        if self.face0.text() == self.newBook['face']:
+            self.selectFace0Function()
+        if self.face1.text() == self.newBook['face']:
+            self.selectFace1Function()
+        if self.face2.text() == self.newBook['face']:
+            self.selectFace2Function()
 
         # 结束操作
         self.done = QToolButton()

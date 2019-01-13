@@ -114,7 +114,8 @@ class MainWidget(QMainWindow):
         # 读取上次打开的目录作为起始目录
         with open('./data/path.txt', 'r', encoding="UTF-8") as p:
             path = p.read()
-        if address is None:
+        print(address)
+        if address is False:
             dirName = QFileDialog.getExistingDirectory(self, '选择文件夹', path)
         else:
             dirName = address
@@ -348,6 +349,13 @@ class MainWidget(QMainWindow):
         ''')
         self.textOut.setStyleSheet('''
             border: 0px;
+        ''')
+        self.textOut.verticalScrollBar().setStyleSheet('''
+            QScrollBar{background:transparent; width: 10px;}
+            QScrollBar::handle{background:lightgray; border:2px solid transparent; border-radius:5px;}
+            QScrollBar::handle:hover{background:gray;}
+            QScrollBar::sub-line{background:transparent;}
+            QScrollBar::add-line{background:transparent;}
         ''')
 
     # 添加作者

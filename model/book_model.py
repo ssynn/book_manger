@@ -4,7 +4,7 @@ from model import public_function as pf
 from model import set_book_dialog as st
 from PyQt5.QtWidgets import (QAbstractItemView, QAction, QMessageBox, QMenu,
                              QApplication, QTreeView, QInputDialog)
-from PyQt5.QtGui import QStandardItemModel, QPixmap
+from PyQt5.QtGui import QStandardItemModel, QPixmap, QStandardItem
 from PyQt5.QtCore import Qt
 
 NAME, AUTHOR, DATE, CLASSIFY, ADDRESS = range(5)
@@ -22,16 +22,16 @@ class BookModel(QTreeView):
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.doubleClicked.connect(self.doubleClickedFunction)
         self.clicked.connect(self.clickedFunction)
+        self.setColumnWidth(0, 250)
         self.setMyStyle()
 
     # 建立模型
     def createBookModel(self):
-        model = QStandardItemModel(0, 5, self)
+        model = QStandardItemModel(0, 4, self)
         model.setHeaderData(NAME, Qt.Horizontal, '书名')
         model.setHeaderData(AUTHOR, Qt.Horizontal, '作者')
         model.setHeaderData(DATE, Qt.Horizontal, '创建时间')
         model.setHeaderData(CLASSIFY, Qt.Horizontal, '分类')
-        model.setHeaderData(ADDRESS, Qt.Horizontal, '文件地址')
 
         for i in self.book_:
             self.addBook(model, i['book_name'], i['author'], i['date'],
@@ -41,11 +41,16 @@ class BookModel(QTreeView):
     # 加入新条目方法
     def addBook(self, model, name, author, date, classify, address):
         model.insertRow(0)
-        model.setData(model.index(0, NAME), name)
-        model.setData(model.index(0, AUTHOR), author)
-        model.setData(model.index(0, DATE), date)
-        model.setData(model.index(0, CLASSIFY), self.listToStr(classify))
-        model.setData(model.index(0, ADDRESS), address)
+        name = QStandardItem(name)
+        name.address = address
+        author = QStandardItem(author)
+        date = QStandardItem(date)
+        classify = QStandardItem(self.listToStr(classify))
+        address = QStandardItem(address)
+        model.setItem(0, NAME, name)
+        model.setItem(0, AUTHOR, author)
+        model.setItem(0, DATE, date)
+        model.setItem(0, CLASSIFY, classify)
 
     # 打开书本所在文件夹
     def openFileItem(self):
@@ -110,14 +115,20 @@ class BookModel(QTreeView):
 
     # 左键双击
     def doubleClickedFunction(self, e):
+        index = self.selectedIndexes()[0].row()
+        address = self.model().item(index).address
         os.system('explorer.exe %s' % os.path.abspath(
-            self.selectedIndexes()[4].data()))
+            address))
 
     # 左键单击
     def clickedFunction(self, e):
+        index = self.selectedIndexes()[0].row()
+        address = self.model().item(index).address
         for i in self.book_:
-            if i['address'] == self.selectedIndexes()[4].data():
-                self.master.picLayout.setPixmap(QPixmap(os.path.join(i['address'], i['face'])).scaled(400, 800, aspectRatioMode=Qt.KeepAspectRatio))
+            if i['address'] == address:
+                self.master.picLayout.setPixmap(
+                    QPixmap(os.path.join(i['address'], i['face'])).scaled(400, 800, aspectRatioMode=Qt.KeepAspectRatio)
+                )
                 break
 
     # 删除书本方法
@@ -126,8 +137,10 @@ class BookModel(QTreeView):
                              QMessageBox.NoButton, self)
         msgBox.addButton("确认", QMessageBox.AcceptRole)
         msgBox.addButton("取消", QMessageBox.RejectRole)
+        index = self.selectedIndexes()[0].row()
+        address = self.model().item(index).address
         if msgBox.exec_() == QMessageBox.AcceptRole:
-            pf.deleteBook(self.selectedIndexes()[4].data(), self.master.textOut)
+            pf.deleteBook(address, self.master.textOut)
             self.master.refresh()
 
     # 复制单行数据方法
@@ -151,30 +164,42 @@ class BookModel(QTreeView):
                              QMessageBox.NoButton, self)
         msgBox.addButton("确认", QMessageBox.AcceptRole)
         msgBox.addButton("取消", QMessageBox.RejectRole)
+
+        index = self.selectedIndexes()[0].row()
+        address = self.model().item(index).address
+
         if msgBox.exec_() == QMessageBox.AcceptRole:
-            pf.deleteBookClassify(self.selectedIndexes()[4].data(), self.master.textOut, self.master.selectedClassifiy)
+            pf.deleteBookClassify(address, self.master.textOut, self.master.selectedClassifiy)
             self.master.refresh()
 
     # 为当前书籍添加分类
     def addClassifyForBookFunction(self):
         temp = QInputDialog(self)
         text, ok = temp.getText(self, '新的分类:', '可输入多个分类(空格间隔)')
+        index = self.selectedIndexes()[0].row()
+        address = self.model().item(index).address
         if ok and len(text) != 0:
-            pf.addBookClassify(self.selectedIndexes()[4].data(), self.master.textOut, text)
+            pf.addBookClassify(address, self.master.textOut, text)
             self.master.refresh()
 
     def setFavouriteFunction(self):
-        pf.addBookClassify(self.selectedIndexes()[4].data(), self.master.textOut, '喜欢')
+        index = self.selectedIndexes()[0].row()
+        address = self.model().item(index).address
+        pf.addBookClassify(address, self.master.textOut, '喜欢')
         self.master.refresh()
 
     def setUnreadFunction(self):
-        pf.addBookClassify(self.selectedIndexes()[4].data(), self.master.textOut, '未看')
+        index = self.selectedIndexes()[0].row()
+        address = self.model().item(index).address
+        pf.addBookClassify(address, self.master.textOut, '未看')
         self.master.refresh()
 
     # 修改书本信息
     def modifyFunction(self):
+        index = self.selectedIndexes()[0].row()
+        address = self.model().item(index).address
         for i in self.book_:
-            if i['address'] == self.selectedIndexes()[4].data():
+            if i['address'] == address:
                 self.addWindow = st.SetBookMessage(i, self.master)
                 self.addWindow.show()
                 self.addWindow.after_close_signal.connect(self.modifyFunctionBase)
@@ -196,8 +221,9 @@ class BookModel(QTreeView):
 
     # 在资源管理器中打开文件夹
     def openFileInExplorer(self):
-        os.system('explorer.exe %s' % os.path.abspath(
-            self.selectedIndexes()[4].data()))
+        index = self.selectedIndexes()[0].row()
+        address = self.model().item(index).address
+        os.system('explorer.exe %s' % os.path.abspath(address))
 
     def setMyStyle(self):
         self.verticalScrollBar().setStyleSheet('''

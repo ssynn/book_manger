@@ -9,6 +9,7 @@ class MyTreeView(QTreeWidget):
     def __init__(self, master):
         super().__init__()
         self.master = master
+        self.setHeaderHidden(True)
         self.classify_all = pf.getAllClassifyName()
         self.authorAll = os.listdir('./books')
         self.authorAll = list(filter(isDir, self.authorAll))
@@ -22,7 +23,6 @@ class MyTreeView(QTreeWidget):
         self.authorAll = temp
 
         self.setColumnCount(1)
-        self.setHeaderLabels(['选项'])
         self.setMinimumWidth(150)
         # self.resize(150, 150)
         self.setMaximumWidth(250)
@@ -31,6 +31,13 @@ class MyTreeView(QTreeWidget):
                 border: 0px;
                 background-color: rgba(255, 233, 240, 1);
             }
+        ''')
+        self.verticalScrollBar().setStyleSheet('''
+            QScrollBar{background:transparent; width: 10px;}
+            QScrollBar::handle{background:lightgray; border:2px solid transparent; border-radius:5px;}
+            QScrollBar::handle:hover{background:gray;}
+            QScrollBar::sub-line{background:transparent;}
+            QScrollBar::add-line{background:transparent;}
         ''')
 
         # 未看

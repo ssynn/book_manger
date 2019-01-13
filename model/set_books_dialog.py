@@ -1,6 +1,6 @@
 import os
 import time
-from PyQt5.QtWidgets import (QWidget, QGridLayout, QTreeView, QTableWidget,
+from PyQt5.QtWidgets import (QWidget, QGridLayout, QTableWidget,
                              QLabel, QLineEdit, QTableWidgetItem, QGroupBox,
                              QCheckBox, QHBoxLayout, QVBoxLayout, QToolButton,
                              QAbstractItemView)
@@ -103,6 +103,7 @@ class SetMultiMessage(QWidget):
         table.setFixedWidth(470)
         table.verticalHeader().setVisible(False)
         table.horizontalHeader().setVisible(False)
+        table.setFocusPolicy(Qt.NoFocus)
         table.setAlternatingRowColors(True)
         table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         table.itemClicked.connect(self.clickFunction)
@@ -271,6 +272,7 @@ class SetMultiMessage(QWidget):
         self.face0.setText(self.newBook['face_list'][0])
         self.face1.setText(self.newBook['face_list'][1])
         self.face2.setText(self.newBook['face_list'][2])
+
         if self.face0.text() == self.newBook['face']:
             self.selectFace0Function()
         if self.face1.text() == self.newBook['face']:
@@ -405,6 +407,7 @@ class SetMultiMessage(QWidget):
                 border-radius: 3px;
                 border: 1px solid #BDBDBD;
             }
+            QTableWidget::item:selected { background-color: #99d1ff; }
         ''')
         self.done.setStyleSheet('''
             QToolButton{

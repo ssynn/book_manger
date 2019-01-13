@@ -7,7 +7,7 @@ from model import main_widget
 if __name__ == '__main__':
     if 'data' not in os.listdir('./'):
         os.mkdir('data')
-        with open('./data/path.json', 'w') as p:
+        with open('./data/path.txt', 'w') as p:
             p.write('./')
     if 'books' not in os.listdir('./'):
         os.mkdir('books')

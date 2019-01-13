@@ -1,6 +1,8 @@
 /books
 /data
 /useless
+/model/__pycache__
+/__pycache__
 sqlite_operation.py
 test.py
 experiment.py

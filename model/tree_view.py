@@ -132,7 +132,6 @@ class MyTreeView(QTreeWidget):
     def deleteItem(self):
         item = QAction('&删除', self)
         item.triggered.connect(self.deleteItemFunction)
-        # item.setEnabled(False)
         return item
 
     def deleteItemFunction(self):
@@ -144,16 +143,3 @@ class MyTreeView(QTreeWidget):
 def isDir(name: str):
     ext = os.path.splitext(name)[1]
     return ext == ''
-
-    # # 右键菜单
-    # def contextMenuEvent(self, e):
-    #     contextMenu = QMenu(self)
-    #     contextMenu.addAction(self.deleteItem())
-    #     contextMenu.exec_(e.globalPos())
-
-    # # 删除当前分类
-    # def deleteItem(self):
-    #     item = QAction('&删除', self)
-    #     item.triggered.connect(self.deleteItemFunction)
-    #     # item.setEnabled(False)
-    #     return item

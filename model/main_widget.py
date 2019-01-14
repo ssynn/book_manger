@@ -185,8 +185,8 @@ class MainWidget(QMainWindow):
     # 删除分类方法
     def deleteClassifyFunction(self):
         text, ok = QInputDialog.getText(self, '删除分类:', '仅可输入一个要删除的分类')
-        if ok and len(text) != 0 and pf.deleteClassify(text) and self.leftTree.deleteClassify(text):
-            pass
+        if ok and len(text) != 0 and pf.deleteClassify(text):
+            self.leftTree.deleteClassify(text)
         else:
             self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + "删除失败!")
 

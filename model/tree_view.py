@@ -1,5 +1,5 @@
 import os
-from PyQt5.QtWidgets import (QTreeWidget, QTreeWidgetItem)
+from PyQt5.QtWidgets import (QTreeWidget, QTreeWidgetItem, QMenu, QAction)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from model import public_function as pf
@@ -78,7 +78,7 @@ class MyTreeView(QTreeWidget):
         # 添加左键
         self.clicked.connect(self.treeItemHandle)
 
-    # 树状视图左键方法
+    # 树状视图左键方法, 切换分类
     def treeItemHandle(self, val: object):
         if val.data() == '分类' or val.data() == '作者':
             return
@@ -118,6 +118,27 @@ class MyTreeView(QTreeWidget):
             child = QTreeWidgetItem(self.author)
             child.setIcon(0, QIcon('./icon/tag.png'))
             child.setText(0, i)
+
+    # 右键菜单
+    def contextMenuEvent(self, e):
+        point = e.pos()
+        item = self.itemAt(point)
+        if item:
+            contextMenu = QMenu(self)
+            contextMenu.addAction(self.deleteItem())
+            contextMenu.exec_(e.globalPos())
+
+    # 删除当前分类
+    def deleteItem(self):
+        item = QAction('&删除', self)
+        item.triggered.connect(self.deleteItemFunction)
+        # item.setEnabled(False)
+        return item
+
+    def deleteItemFunction(self):
+        item = self.currentItem()
+        if pf.deleteClassify(item.text(0)):
+            self.classify.removeChild(self.currentItem())
 
 
 def isDir(name: str):

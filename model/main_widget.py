@@ -161,6 +161,7 @@ class MainWidget(QMainWindow):
         if ok and len(text) != 0:
             text = text.split()
             if pf.addNewClassify(text):
+                self.leftTree.classify_all += text
                 self.leftTree.addNewClassify(text)
             else:
                 self.textOut.append(time.strftime("%Y-%m-%d %H:%M") + "添加失败!")

@@ -88,8 +88,9 @@ class MyTreeView(QTreeWidget):
         self.master.selectedClassifiy = val.data()
         self.master.refresh()
 
-    # 把子分类加入分类
+    # 把分类加入树状视图
     def addNewClassify(self, text: list):
+        text.reverse()
         for i in text:
             child = QTreeWidgetItem(self.classify)
             child.setIcon(0, QIcon('./icon/tag.png'))
@@ -99,6 +100,7 @@ class MyTreeView(QTreeWidget):
     def deleteClassify(self, text):
         if text not in self.classify_all:
             return False
+        self.classify_all.remove(text)
         item = self.findItems(text, Qt.MatchRecursive)
         if len(item) != 0:
             self.classify.removeChild(item[0])

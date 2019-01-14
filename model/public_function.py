@@ -319,9 +319,10 @@ def addNewClassify(classify_name: list):
         conn = sqlite3.connect('./data/data.db')
         cursor = conn.cursor()
         for i in classify_name:
-            cursor.execute("insert into classify values (?,'')", [i])
+            cursor.execute("insert into classify values (?)", [i])
         res = True
-    except Exception:
+    except Exception as e:
+        print(e)
         print("添加分类失败！")
         res = False
     finally:

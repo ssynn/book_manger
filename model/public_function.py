@@ -56,8 +56,8 @@ class AddNewBook(QThread):
             cursor.execute('''insert into books values (?,?,?,?,?,?,?,?,?,?,?,?)''', book_info)
             # 记录执行结果
             res = True
-        except Exception:
-            # print(self.book_, book_info)
+        except Exception as e:
+            print(e)
             res = False
             self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '添加失败！' + self.book_['new_name'])
         finally:
@@ -101,12 +101,14 @@ class AddNewBookS(QThread):
         self.end.emit()
 
     def process(self, book_):
+        res = False
         try:
             if len(self.cursor.execute('''select original_name from books where original_name=?''', [book_['original_name']]).fetchall()) != 0:
                 raise Exception
             # 没有对应的作者目录则需要建立对应的作者目录
             if self.author_all.count(book_['author']) == 0:
                 os.makedirs('./books/'+book_['author'])
+                self.author_all.append(book_['author'])
                 self.authorChange.emit(book_['author'])
             # 把书移动到books文件夹内
             self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '开始添加：('+str(self.no) + '/' + str(len(self.books)) + ')' + book_['new_name'])
@@ -119,8 +121,8 @@ class AddNewBookS(QThread):
                 book_info.append(book_[i])
             self.cursor.execute('''insert into books values (?,?,?,?,?,?,?,?,?,?,?,?)''', book_info)
             res = True
-        except Exception:
-            res = False
+        except Exception as e:
+            print(e)
             self.stateChange.emit(time.strftime("%Y-%m-%d %H:%M") + '添加失败！' + book_['new_name'])
         finally:
             if res:

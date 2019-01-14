@@ -25,12 +25,12 @@ if __name__ == '__main__':
                 book_name text,
                 Cxx varchar(10),
                 chinesization text,
-                author text,
                 favourite int,
                 date text,
                 unread int,
                 original_name text,
-                new_name text
+                new_name text,
+                author text
                 )''')
     if not ('classify',) in tables:
         cursor.execute('''create table classify(

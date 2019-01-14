@@ -7,7 +7,6 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QLabel,
     QCheckBox,
-    QTextEdit,
     QHBoxLayout,
     QToolButton,
     QGroupBox

@@ -364,7 +364,7 @@ class SetMultiMessage(QWidget):
                 i['author'] = self.publicAuthorInput.text()
 
             # 生成最终决定的书名和地址
-            self.newBook['new_name'] = f"[{self.newBook['author']}]{self.newBook['book_name']}[{self.newBook['chinesization']}]"
+            i['new_name'] = f"[{i['author']}]{i['book_name']}[{i['chinesization']}]"
 
             if i['Cxx'] != 'C00':
                 i['new_name'] += ('(' + i['Cxx'] + ')')

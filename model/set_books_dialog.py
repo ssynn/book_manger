@@ -23,6 +23,8 @@ class SetMultiMessage(QWidget):
         # 传入的是地址
         if address:
             for i in filelist:
+                if os.path.isfile(i):
+                    continue
                 dirName = os.path.split(i)[1]
                 temp = pf.bookNameCut(dirName)
                 temp['face_list'] = os.listdir(i)[:6]

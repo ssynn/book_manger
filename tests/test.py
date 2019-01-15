@@ -26,3 +26,6 @@ print(cursor.execute('''select favourite, unread from books''').fetchall())
 
 # %%
 print(cursor.execute("select * from books where favourite=1").fetchall())
+
+# %%
+print(pf.getBookList('全彩'))

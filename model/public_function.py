@@ -378,7 +378,7 @@ def getBookList(classify_name: str, out_box=None):
         return toDictList(data)
 
 
-# 通过查找分类返回包含完整书本信息的dict列表，使用glob查找
+# 通过查找作者返回包含完整书本信息的dict列表，使用glob查找
 def getBookListByAuthor(author_name: str, out_box=None):
     try:
         conn = sqlite3.connect('./data/data.db')

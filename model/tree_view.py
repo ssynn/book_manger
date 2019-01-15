@@ -90,7 +90,6 @@ class MyTreeView(QTreeWidget):
 
     # 把分类加入树状视图
     def addNewClassify(self, text: list):
-        text.reverse()
         for i in text:
             child = QTreeWidgetItem(self.classify)
             child.setIcon(0, QIcon('./icon/tag.png'))

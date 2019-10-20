@@ -311,7 +311,7 @@ def book_name_cut(name: str):
     for item in book_name:
         name += item
 
-    newBook['book_name'] = name.replace(' ', '')
+    # newBook['book_name'] = name.replace(' ', '')
     return newBook
 
 

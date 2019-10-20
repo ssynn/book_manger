@@ -190,7 +190,7 @@ class SetBookMessage(QWidget):
     def confirm(self):
         # 除了时间和originalname其他都需要在这里做决定
         self.newBook['original_path'] = self.path
-        self.newBook['author'] = self.authorInput.text().replace(' ', '')
+        self.newBook['author'] = self.authorInput.text()
         self.newBook['book_name'] = self.bookNameInput.text()
         self.newBook['Cxx'] = self.comicMarketInput.text()
         self.newBook['chinesization'] = self.chinesizationInput.text()

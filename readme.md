@@ -72,8 +72,7 @@
 
 <pre>
 ('''create table classify(
-    name text primary key,
-    book_list text
+    name text primary key
 )''')
 </pre>
 
